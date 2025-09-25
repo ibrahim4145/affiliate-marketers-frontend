@@ -1,13 +1,10 @@
-"use client";
-
-import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Icon from "@/components/ui/Icon";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
-export default function Home() {
-  const stats = [
+// Static data - no client state needed
+const stats = [
     {
       title: "Total Industries",
       value: "12",
@@ -38,126 +35,141 @@ export default function Home() {
     }
   ];
 
-  const recentActivity = [
+const recentActivity = [
     { action: "New industry added", target: "Healthcare", time: "2 hours ago", type: "success" },
     { action: "Query completed", target: "AI startups", time: "4 hours ago", type: "info" },
     { action: "Lead generated", target: "TechCorp Inc", time: "6 hours ago", type: "success" },
     { action: "Industry updated", target: "Finance", time: "1 day ago", type: "info" }
   ];
 
+export default function Home() {
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome back! Here's what's happening with your scraper.</p>
-        </div>
-        <div className="flex space-x-3">
-          <Button variant="outline" size="sm">
-            <Icon name="edit" className="mr-2" />
-            Export Data
-          </Button>
-          <Button size="sm">
-            <Icon name="plus" className="mr-2" />
-            Add New
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index} hover className="relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                <p className="text-xs text-green-600 mt-1">{stat.change}</p>
-              </div>
-              <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center`}>
-                <Icon name={stat.icon} className="text-white" size="lg" />
-              </div>
+      <div className="h-full flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 min-h-screen">
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 p-4 flex-shrink-0 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+                Dashboard
+              </h1>
+              <p className="text-slate-600 mt-1 text-sm">Welcome back! Here&apos;s what&apos;s happening with your scraper.</p>
             </div>
-            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-white/20 to-transparent rounded-full -translate-y-10 translate-x-10"></div>
-          </Card>
-        ))}
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
-        <Card className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
-            <Button variant="ghost" size="sm">View All</Button>
+            <div className="flex space-x-3">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="bg-white/80 backdrop-blur-sm border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300"
+              >
+                <Icon name="edit" className="mr-2" />
+                Export Data
+              </Button>
+              <Button 
+                size="sm"
+                className="bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <Icon name="plus" className="mr-2" />
+                Add New
+              </Button>
+            </div>
           </div>
-          <div className="space-y-4">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                <div className={`w-2 h-2 rounded-full ${
-                  activity.type === 'success' ? 'bg-green-500' : 'bg-blue-500'
-                }`}></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                  <p className="text-sm text-gray-500">{activity.target}</p>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="p-4 pb-3 flex-shrink-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {stats.map((stat, index) => (
+              <div key={index} className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-200/50">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">{stat.title}</p>
+                    <p className="text-3xl font-bold text-slate-900 mt-2">{stat.value}</p>
+                    <p className="text-xs text-emerald-600 mt-2 font-medium">{stat.change}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center shadow-sm">
+                    <Icon name={stat.icon} className="text-slate-700" size="lg" />
+                  </div>
                 </div>
-                <div className="text-xs text-gray-400">{activity.time}</div>
               </div>
             ))}
           </div>
-        </Card>
+        </div>
 
-        {/* Quick Actions */}
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Quick Actions</h3>
-          <div className="space-y-3">
-            <Button variant="outline" className="w-full justify-start">
-              <Icon name="industries" className="mr-3" />
-              Manage Industries
-            </Button>
-            <Button variant="outline" className="w-full justify-start">
-              <Icon name="search" className="mr-3" />
-              Run New Query
-            </Button>
-            <Button variant="outline" className="w-full justify-start">
-              <Icon name="users" className="mr-3" />
-              View Leads
-            </Button>
-            <Button variant="outline" className="w-full justify-start">
-              <Icon name="edit" className="mr-3" />
-              Export Data
-            </Button>
+        {/* Main Content Grid */}
+        <div className="flex-1 px-4 pb-4 min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Recent Activity */}
+            <div className="lg:col-span-2 bg-white/80 backdrop-blur-xl rounded-lg shadow-lg border border-slate-200/50 p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-semibold text-slate-900">Recent Activity</h3>
+                <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 text-xs">View All</Button>
+              </div>
+              <div className="space-y-3">
+                {recentActivity.map((activity, index) => (
+                  <div key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                    <div className={`w-2 h-2 rounded-full ${
+                      activity.type === 'success' ? 'bg-emerald-500' : 'bg-slate-500'
+                    }`}></div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-slate-900">{activity.action}</p>
+                      <p className="text-xs text-slate-500">{activity.target}</p>
+                    </div>
+                    <div className="text-xs text-slate-400">{activity.time}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white/80 backdrop-blur-xl rounded-lg shadow-lg border border-slate-200/50 p-4">
+              <h3 className="text-base font-semibold text-slate-900 mb-4">Quick Actions</h3>
+              <div className="space-y-2">
+                <Button variant="outline" size="sm" className="w-full justify-start bg-white/50 hover:bg-slate-50 border-slate-300 text-slate-700 text-xs">
+                  <Icon name="industries" className="mr-2" size="sm" />
+                  Manage Industries
+                </Button>
+                <Button variant="outline" size="sm" className="w-full justify-start bg-white/50 hover:bg-slate-50 border-slate-300 text-slate-700 text-xs">
+                  <Icon name="search" className="mr-2" size="sm" />
+                  Run New Query
+                </Button>
+                <Button variant="outline" size="sm" className="w-full justify-start bg-white/50 hover:bg-slate-50 border-slate-300 text-slate-700 text-xs">
+                  <Icon name="users" className="mr-2" size="sm" />
+                  View Leads
+                </Button>
+                <Button variant="outline" size="sm" className="w-full justify-start bg-white/50 hover:bg-slate-50 border-slate-300 text-slate-700 text-xs">
+                  <Icon name="edit" className="mr-2" size="sm" />
+                  Export Data
+                </Button>
+              </div>
+            </div>
           </div>
-        </Card>
+
+        {/* Performance Overview */}
+        <div className="mt-4 bg-white/80 backdrop-blur-xl rounded-lg shadow-lg border border-slate-200/50 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-slate-900">Performance Overview</h3>
+            <div className="flex space-x-2">
+              <Badge variant="success" size="sm">Active</Badge>
+              <Badge variant="info" size="sm">Optimized</Badge>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="text-xl font-bold text-slate-700">98.5%</div>
+              <div className="text-xs text-slate-600">Uptime</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xl font-bold text-slate-700">2.3s</div>
+              <div className="text-xs text-slate-600">Avg Response</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xl font-bold text-slate-700">1,247</div>
+              <div className="text-xs text-slate-600">Total Requests</div>
+            </div>
+          </div>
+        </div>
+        </div>
       </div>
-
-      {/* Performance Overview */}
-      <Card>
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Performance Overview</h3>
-          <div className="flex space-x-2">
-            <Badge variant="success">Active</Badge>
-            <Badge variant="info">Optimized</Badge>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">98.5%</div>
-            <div className="text-sm text-gray-600">Uptime</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">2.3s</div>
-            <div className="text-sm text-gray-600">Avg Response</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">1,247</div>
-            <div className="text-sm text-gray-600">Total Requests</div>
-          </div>
-        </div>
-      </Card>
-    </div>
     </DashboardLayout>
   );
 }

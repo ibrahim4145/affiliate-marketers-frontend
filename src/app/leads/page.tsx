@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import Card from "@/components/ui/Card";
 import TableHeader from "@/components/tables/TableHeader";
 import MobileCard from "@/components/tables/MobileCard";
@@ -8,9 +5,10 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Icon from "@/components/ui/Icon";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import LeadsClient from "./LeadsClient";
 
-export default function LeadsPage() {
-  const [leads, setLeads] = useState([
+// Static data - moved to server-side
+const leads = [
     {
       id: 1,
       domain: "techcorp.com",
@@ -39,11 +37,11 @@ export default function LeadsPage() {
     },
     {
       id: 3,
-      domain: "healthtech.io",
+    domain: "healthcare-solutions.com",
       owner: "Dr. Emily Rodriguez",
-      company: "HealthTech Solutions",
-      title: "Founder",
-      email: "emily@healthtech.io",
+    company: "Healthcare Solutions",
+    title: "Medical Director",
+    email: "emily@healthcare-solutions.com",
       phone: "+1 (555) 345-6789",
       status: "qualified",
       industry: "Healthcare",
@@ -52,248 +50,227 @@ export default function LeadsPage() {
     },
     {
       id: 4,
-      domain: "edulab.com",
+    domain: "edutech.com",
       owner: "David Kim",
-      company: "EduLab",
-      title: "VP of Product",
-      email: "david@edulab.com",
+    company: "EduTech Solutions",
+    title: "Founder",
+    email: "david@edutech.com",
       phone: "+1 (555) 456-7890",
       status: "new",
       industry: "Education",
-      source: "Google Search",
+    source: "LinkedIn",
+    lastContact: "Never"
+  },
+  {
+    id: 5,
+    domain: "retailmax.com",
+    owner: "Lisa Thompson",
+    company: "RetailMax",
+    title: "VP of Operations",
+    email: "lisa@retailmax.com",
+    phone: "+1 (555) 567-8901",
+    status: "contacted",
+    industry: "Retail",
+    source: "Website",
+    lastContact: "3 days ago"
+  },
+  {
+    id: 6,
+    domain: "manufacturing-pro.com",
+    owner: "Robert Wilson",
+    company: "Manufacturing Pro",
+    title: "Operations Manager",
+    email: "robert@manufacturing-pro.com",
+    phone: "+1 (555) 678-9012",
+    status: "qualified",
+    industry: "Manufacturing",
+    source: "Trade Show",
+    lastContact: "5 days ago"
+  },
+  {
+    id: 7,
+    domain: "fintech-innovations.com",
+    owner: "Jennifer Lee",
+    company: "FinTech Innovations",
+    title: "CTO",
+    email: "jennifer@fintech-innovations.com",
+    phone: "+1 (555) 789-0123",
+    status: "new",
+    industry: "Finance",
+    source: "LinkedIn",
+    lastContact: "Never"
+  },
+  {
+    id: 8,
+    domain: "medtech-solutions.com",
+    owner: "Dr. James Anderson",
+    company: "MedTech Solutions",
+    title: "Chief Medical Officer",
+    email: "james@medtech-solutions.com",
+    phone: "+1 (555) 890-1234",
+    status: "contacted",
+    industry: "Healthcare",
+    source: "Conference",
+    lastContact: "1 day ago"
+  },
+  {
+    id: 9,
+    domain: "edtech-platform.com",
+    owner: "Maria Garcia",
+    company: "EdTech Platform",
+    title: "CEO",
+    email: "maria@edtech-platform.com",
+    phone: "+1 (555) 901-2345",
+    status: "qualified",
+    industry: "Education",
+    source: "Website",
+    lastContact: "2 weeks ago"
+  },
+  {
+    id: 10,
+    domain: "retail-tech.com",
+    owner: "Alex Johnson",
+    company: "Retail Tech",
+    title: "Founder",
+    email: "alex@retail-tech.com",
+    phone: "+1 (555) 012-3456",
+    status: "new",
+    industry: "Retail",
+    source: "LinkedIn",
+    lastContact: "Never"
+  },
+  {
+    id: 11,
+    domain: "smart-manufacturing.com",
+    owner: "Thomas Brown",
+    company: "Smart Manufacturing",
+    title: "VP of Technology",
+    email: "thomas@smart-manufacturing.com",
+    phone: "+1 (555) 123-4567",
+    status: "contacted",
+    industry: "Manufacturing",
+    source: "Trade Show",
+    lastContact: "4 days ago"
+  },
+  {
+    id: 12,
+    domain: "fintech-startup.com",
+    owner: "Rachel Davis",
+    company: "FinTech Startup",
+    title: "Co-Founder",
+    email: "rachel@fintech-startup.com",
+    phone: "+1 (555) 234-5678",
+    status: "qualified",
+    industry: "Finance",
+    source: "Referral",
+    lastContact: "1 week ago"
+  },
+  {
+    id: 13,
+    domain: "healthtech-innovations.com",
+    owner: "Dr. Sarah Miller",
+    company: "HealthTech Innovations",
+    title: "Medical Director",
+    email: "sarah@healthtech-innovations.com",
+    phone: "+1 (555) 345-6789",
+    status: "new",
+    industry: "Healthcare",
+    source: "Conference",
+    lastContact: "Never"
+  },
+  {
+    id: 14,
+    domain: "edtech-solutions.com",
+    owner: "Kevin Wilson",
+    company: "EdTech Solutions",
+    title: "CTO",
+    email: "kevin@edtech-solutions.com",
+    phone: "+1 (555) 456-7890",
+    status: "contacted",
+    industry: "Education",
+    source: "Website",
+    lastContact: "6 days ago"
+  },
+  {
+    id: 15,
+    domain: "retail-innovations.com",
+    owner: "Amanda Taylor",
+    company: "Retail Innovations",
+    title: "VP of Strategy",
+    email: "amanda@retail-innovations.com",
+    phone: "+1 (555) 567-8901",
+    status: "qualified",
+    industry: "Retail",
+    source: "LinkedIn",
+    lastContact: "3 days ago"
+  },
+  {
+    id: 16,
+    domain: "advanced-manufacturing.com",
+    owner: "Carlos Rodriguez",
+    company: "Advanced Manufacturing",
+    title: "Operations Director",
+    email: "carlos@advanced-manufacturing.com",
+    phone: "+1 (555) 678-9012",
+    status: "new",
+    industry: "Manufacturing",
+    source: "Trade Show",
+    lastContact: "Never"
+  },
+  {
+    id: 17,
+    domain: "fintech-enterprise.com",
+    owner: "Michelle Chen",
+    company: "FinTech Enterprise",
+    title: "CEO",
+    email: "michelle@fintech-enterprise.com",
+    phone: "+1 (555) 789-0123",
+    status: "contacted",
+    industry: "Finance",
+    source: "Referral",
+    lastContact: "2 days ago"
+  },
+  {
+    id: 18,
+    domain: "healthcare-tech.com",
+    owner: "Dr. Michael Johnson",
+    company: "Healthcare Tech",
+    title: "Chief Technology Officer",
+    email: "michael@healthcare-tech.com",
+    phone: "+1 (555) 890-1234",
+    status: "qualified",
+    industry: "Healthcare",
+    source: "Conference",
+    lastContact: "1 week ago"
+  },
+  {
+    id: 19,
+    domain: "edtech-enterprise.com",
+    owner: "Jessica Martinez",
+    company: "EdTech Enterprise",
+    title: "VP of Product",
+    email: "jessica@edtech-enterprise.com",
+    phone: "+1 (555) 901-2345",
+    status: "new",
+    industry: "Education",
+    source: "Website",
       lastContact: "Never"
-    }
-  ]);
+  },
+  {
+    id: 20,
+    domain: "retail-solutions.com",
+    owner: "Daniel Kim",
+    company: "Retail Solutions",
+    title: "Founder",
+    email: "daniel@retail-solutions.com",
+    phone: "+1 (555) 012-3456",
+    status: "contacted",
+    industry: "Retail",
+    source: "LinkedIn",
+    lastContact: "5 days ago"
+  }
+];
 
-  const [filter, setFilter] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const filteredLeads = leads.filter(lead => {
-    const matchesFilter = filter === "all" || lead.status === filter;
-    const matchesSearch = lead.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.domain.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "new": return "info";
-      case "contacted": return "warning";
-      case "qualified": return "success";
-      case "converted": return "success";
-      default: return "default";
-    }
-  };
-
-  const getIndustryColor = (industry: string) => {
-    switch (industry) {
-      case "Technology": return "bg-blue-100 text-blue-800";
-      case "Finance": return "bg-green-100 text-green-800";
-      case "Healthcare": return "bg-red-100 text-red-800";
-      case "Education": return "bg-purple-100 text-purple-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  return (
-    <DashboardLayout>
-      <div className="p-6 space-y-6">
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Leads</h1>
-            <p className="text-gray-600 mt-1">Manage and track your potential customers</p>
-          </div>
-          <div className="flex space-x-3">
-            <Button variant="outline" size="sm">
-              <Icon name="edit" className="mr-2" />
-              Export Leads
-            </Button>
-            <Button size="sm">
-              <Icon name="plus" className="mr-2" />
-              Add Lead
-            </Button>
-          </div>
-        </div>
-
-        {/* Filters and Search */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Search leads by company, name, or domain..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <div className="flex space-x-2">
-            {["all", "new", "contacted", "qualified"].map((status) => (
-              <Button
-                key={status}
-                variant={filter === status ? "primary" : "outline"}
-                size="sm"
-                onClick={() => setFilter(status)}
-              >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </Button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{leads.length}</div>
-            <div className="text-sm text-gray-600">Total Leads</div>
-          </div>
-        </Card>
-        <Card>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {leads.filter(l => l.status === "qualified").length}
-            </div>
-            <div className="text-sm text-gray-600">Qualified</div>
-          </div>
-        </Card>
-        <Card>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600">
-              {leads.filter(l => l.status === "contacted").length}
-            </div>
-            <div className="text-sm text-gray-600">Contacted</div>
-          </div>
-        </Card>
-        <Card>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {leads.filter(l => l.status === "new").length}
-            </div>
-            <div className="text-sm text-gray-600">New</div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Desktop Table */}
-      <div className="hidden md:block">
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1200px]">
-              <TableHeader headers={["Lead", "Company", "Contact", "Status", "Industry", "Source", "Last Contact", "Actions"]} />
-              <tbody className="divide-y divide-gray-200">
-                {filteredLeads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 min-w-[200px]">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
-                          <Icon name="users" className="text-purple-600" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-medium text-gray-900 truncate">{lead.owner}</div>
-                          <div className="text-sm text-gray-500 truncate">{lead.domain}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 min-w-[180px]">
-                      <div className="font-medium text-gray-900 truncate">{lead.company}</div>
-                      <div className="text-sm text-gray-500 truncate">{lead.title}</div>
-                    </td>
-                    <td className="px-6 py-4 min-w-[200px]">
-                      <div className="text-sm text-gray-900 truncate">{lead.email}</div>
-                      <div className="text-sm text-gray-500 truncate">{lead.phone}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge variant={getStatusColor(lead.status) as any}>
-                        {lead.status}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getIndustryColor(lead.industry)}`}>
-                        {lead.industry}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 min-w-[100px]">
-                      {lead.source}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 min-w-[120px]">
-                      {lead.lastContact}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm">
-                          <Icon name="edit" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Icon name="delete" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      </div>
-
-      {/* Mobile Cards */}
-      <div className="md:hidden space-y-4">
-        {filteredLeads.map((lead) => (
-          <MobileCard
-            key={lead.id}
-            data={{
-              name: lead.owner,
-              company: lead.company,
-              title: lead.title,
-              email: lead.email,
-              phone: lead.phone,
-              status: lead.status,
-              industry: lead.industry,
-              source: lead.source,
-              lastContact: lead.lastContact
-            }}
-            actions={
-              <div className="flex space-x-2">
-                <Button variant="outline" size="sm">
-                  Edit
-                </Button>
-                <Button variant="outline" size="sm">
-                  Delete
-                </Button>
-              </div>
-            }
-          />
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {filteredLeads.length === 0 && (
-        <Card className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Icon name="users" className="text-gray-400" size="lg" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {searchTerm ? "No leads found" : "No leads yet"}
-          </h3>
-          <p className="text-gray-500 mb-6">
-            {searchTerm 
-              ? "Try adjusting your search terms or filters."
-              : "Start by running queries to generate your first leads."
-            }
-          </p>
-          {!searchTerm && (
-            <Button>
-              <Icon name="search" className="mr-2" />
-              Run Your First Query
-            </Button>
-          )}
-        </Card>
-      )}
-      </div>
-    </DashboardLayout>
-  );
+export default function LeadsPage() {
+  return <LeadsClient leads={leads} />;
 }

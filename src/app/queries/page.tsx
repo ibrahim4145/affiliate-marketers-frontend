@@ -87,13 +87,13 @@ export default function QueriesPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-4 space-y-4">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 p-6">
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Queries</h1>
-            <p className="text-gray-600 mt-1">Manage your search queries and track their performance</p>
+            <h1 className="text-2xl font-bold text-gray-900">Queries</h1>
+            <p className="text-gray-600 mt-1 text-sm">Manage your search queries and track their performance</p>
           </div>
           <div className="flex space-x-3">
             <Button variant="outline" size="sm">
@@ -143,47 +143,49 @@ export default function QueriesPage() {
               <tbody className="divide-y divide-gray-200">
                 {queries.map((query) => (
                   <tr key={query.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3">
                       <div className="flex items-center">
-                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                          <Icon name="search" className="text-green-600" />
+                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                          <Icon name="search" className="text-green-600" size="sm" />
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">{query.query}</div>
-                          <div className="text-sm text-gray-500">ID: {query.id}</div>
+                          <div className="font-medium text-gray-900 text-sm">{query.query}</div>
+                          <div className="text-xs text-gray-500">ID: {query.id}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <Badge variant={getStatusColor(query.status) as any}>
+                    <td className="px-4 py-3">
+                      <Badge variant={getStatusColor(query.status) as "success" | "warning" | "info" | "error"} size="sm">
                         {query.status}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3">
                       <div className="text-lg font-semibold text-gray-900">{query.results}</div>
-                      <div className="text-sm text-gray-500">results found</div>
+                      <div className="text-xs text-gray-500">results found</div>
                     </td>
-                    <td className="px-6 py-4">
-                      <Badge variant="info">{query.industry}</Badge>
+                    <td className="px-4 py-3">
+                      <Badge variant="info" size="sm">{query.industry}</Badge>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-xs text-gray-500">
                       {query.lastRun}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex space-x-2">
+                    <td className="px-4 py-3">
+                      <div className="flex space-x-1">
                         <Button 
                           variant="ghost" 
                           size="sm"
                           onClick={() => toggleStatus(query.id)}
+                          className="p-1"
                         >
-                          <Icon name={query.status === "running" ? "close" : "check"} />
+                          <Icon name={query.status === "running" ? "close" : "check"} size="sm" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm"
                           onClick={() => deleteQuery(query.id)}
+                          className="p-1"
                         >
-                          <Icon name="delete" />
+                          <Icon name="delete" size="sm" />
                         </Button>
                       </div>
                     </td>

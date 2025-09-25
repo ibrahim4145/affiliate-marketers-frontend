@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -27,24 +27,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Check for existing session on mount
     const checkAuth = () => {
-      const storedUser = localStorage.getItem('affiliate-marketers-user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+      try {
+        const storedUser = localStorage.getItem('affiliate-marketers-user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+      } catch {
+        // Clear corrupted data
+        localStorage.removeItem('affiliate-marketers-user');
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     checkAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+    if (!email || !password) {
+      setIsLoading(false);
+      return false;
+    }
+    
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Simple validation (in real app, this would be server-side)
-    if (email && password) {
+    try {
+      // Simulate API call with reduced timeout
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const userData: User = {
         id: '1',
         name: email.split('@')[0],
@@ -53,27 +63,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       setUser(userData);
       localStorage.setItem('affiliate-marketers-user', JSON.stringify(userData));
-      setIsLoading(false);
       return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
-    return false;
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem('affiliate-marketers-user');
     router.push('/login');
-  };
+  }, [router]);
 
-  const value = {
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
     user,
     isAuthenticated: !!user,
     isLoading,
     login,
     logout
-  };
+  }), [user, isLoading, login, logout]);
 
   return (
     <AuthContext.Provider value={value}>
