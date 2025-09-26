@@ -2,18 +2,14 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+import { apiClient, User } from '@/lib/api';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
+  register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -26,15 +22,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Check for existing session on mount
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
-        const storedUser = localStorage.getItem('affiliate-marketers-user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+        const token = localStorage.getItem('affiliate-marketers-token');
+        if (token) {
+          apiClient.setToken(token);
+          const userData = await apiClient.getCurrentUser();
+          setUser(userData);
         }
-      } catch {
-        // Clear corrupted data
-        localStorage.removeItem('affiliate-marketers-user');
+      } catch (error) {
+        console.error('Auth check error:', error);
+        // Clear invalid token
+        localStorage.removeItem('affiliate-marketers-token');
+        apiClient.setToken(null);
       } finally {
         setIsLoading(false);
       }
@@ -52,17 +52,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     
     try {
-      // Simulate API call with reduced timeout
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await apiClient.login({ email, password });
+      apiClient.setToken(response.access_token);
       
-      const userData: User = {
-        id: '1',
-        name: email.split('@')[0],
-        email: email
-      };
-      
+      const userData = await apiClient.getCurrentUser();
       setUser(userData);
-      localStorage.setItem('affiliate-marketers-user', JSON.stringify(userData));
       return true;
     } catch (error) {
       console.error('Login error:', error);
@@ -72,9 +66,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const register = useCallback(async (name: string, email: string, password: string): Promise<boolean> => {
+    if (!name || !email || !password) {
+      setIsLoading(false);
+      return false;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      await apiClient.register({ name, email, password });
+      // After successful registration, automatically log in
+      return await login(email, password);
+    } catch (error) {
+      console.error('Registration error:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [login]);
+
   const logout = useCallback(() => {
     setUser(null);
-    localStorage.removeItem('affiliate-marketers-user');
+    apiClient.setToken(null);
     router.push('/login');
   }, [router]);
 
@@ -84,8 +98,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!user,
     isLoading,
     login,
+    register,
     logout
-  }), [user, isLoading, login, logout]);
+  }), [user, isLoading, login, register, logout]);
 
   return (
     <AuthContext.Provider value={value}>

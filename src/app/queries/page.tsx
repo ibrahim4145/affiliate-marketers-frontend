@@ -1,250 +1,236 @@
 "use client";
 
-import { useState } from "react";
-import Button from "@/components/ui/Button";
-import Card from "@/components/ui/Card";
-import TableHeader from "@/components/tables/TableHeader";
-import MobileCard from "@/components/tables/MobileCard";
-import Badge from "@/components/ui/Badge";
-import Icon from "@/components/ui/Icon";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiClient, Query } from "@/lib/api";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import Badge from "@/components/ui/Badge";
 
 export default function QueriesPage() {
-  const [queries, setQueries] = useState([
-    { 
-      id: 1, 
-      query: "Best SaaS tools for startups", 
-      status: "running", 
-      results: 45, 
-      lastRun: "2 minutes ago",
-      industry: "Technology"
-    },
-    { 
-      id: 2, 
-      query: "Crypto investment trends", 
-      status: "completed", 
-      results: 23, 
-      lastRun: "1 hour ago",
-      industry: "Finance"
-    },
-    { 
-      id: 3, 
-      query: "Healthcare AI solutions", 
-      status: "paused", 
-      results: 12, 
-      lastRun: "2 hours ago",
-      industry: "Healthcare"
-    },
-    { 
-      id: 4, 
-      query: "EdTech platforms", 
-      status: "completed", 
-      results: 67, 
-      lastRun: "1 day ago",
-      industry: "Education"
+  const [queries, setQueries] = useState<Query[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [editingQuery, setEditingQuery] = useState<Query | null>(null);
+  const [formData, setFormData] = useState({
+    query: "",
+    description: ""
+  });
+  const { isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchQueries();
     }
-  ]);
+  }, [isAuthenticated]);
 
-  const [newQuery, setNewQuery] = useState("");
-  const [isAdding, setIsAdding] = useState(false);
-
-  const addQuery = () => {
-    if (newQuery.trim()) {
-      const newId = Math.max(...queries.map(q => q.id)) + 1;
-      setQueries([...queries, {
-        id: newId,
-        query: newQuery,
-        status: "running",
-        results: 0,
-        lastRun: "just now",
-        industry: "General"
-      }]);
-      setNewQuery("");
-      setIsAdding(false);
+  const fetchQueries = async () => {
+    try {
+      setLoading(true);
+      const data = await apiClient.getQueries();
+      setQueries(data);
+    } catch (err) {
+      setError("Failed to fetch queries");
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const toggleStatus = (id: number) => {
-    setQueries(queries.map(q => 
-      q.id === id 
-        ? { ...q, status: q.status === "running" ? "paused" : "running" }
-        : q
-    ));
-  };
-
-  const deleteQuery = (id: number) => {
-    setQueries(queries.filter(q => q.id !== id));
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "running": return "info";
-      case "completed": return "success";
-      case "paused": return "warning";
-      default: return "default";
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingQuery) {
+        await apiClient.updateQuery(editingQuery.id, formData);
+      } else {
+        await apiClient.createQuery(formData);
+      }
+      await fetchQueries();
+      setShowForm(false);
+      setEditingQuery(null);
+      setFormData({ query: "", description: "" });
+    } catch (err) {
+      setError("Failed to save query");
+      console.error(err);
     }
   };
+
+  const handleEdit = (query: Query) => {
+    setEditingQuery(query);
+    setFormData({
+      query: query.query,
+      description: query.description || ""
+    });
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this query?")) {
+      try {
+        await apiClient.deleteQuery(id);
+        await fetchQueries();
+      } catch (err) {
+        setError("Failed to delete query");
+        console.error(err);
+      }
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <p className="text-gray-600">Please log in to access this page.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <DashboardLayout>
-      <div className="p-4 space-y-4">
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 p-4">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Queries</h1>
-            <p className="text-gray-600 mt-1 text-sm">Manage your search queries and track their performance</p>
+            <p className="text-gray-600">Manage your search queries</p>
           </div>
-          <div className="flex space-x-3">
-            <Button variant="outline" size="sm">
-              <Icon name="edit" className="mr-2" />
-              Export Results
-            </Button>
-            <Button 
-              size="sm" 
-              onClick={() => setIsAdding(true)}
-            >
-              <Icon name="plus" className="mr-2" />
-              New Query
-            </Button>
-          </div>
+          <Button
+            onClick={() => {
+              setShowForm(true);
+              setEditingQuery(null);
+              setFormData({ query: "", description: "" });
+            }}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Add Query
+          </Button>
         </div>
 
-        {/* Add Query Form */}
-        {isAdding && (
-          <div className="mt-6 p-4 bg-green-50 rounded-xl border border-green-200">
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={newQuery}
-                onChange={(e) => setNewQuery(e.target.value)}
-                placeholder="Enter your search query..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                onKeyPress={(e) => e.key === 'Enter' && addQuery()}
-                autoFocus
-              />
-              <Button onClick={addQuery} disabled={!newQuery.trim()}>
-                Start Query
-              </Button>
-              <Button variant="outline" onClick={() => {setIsAdding(false); setNewQuery("");}}>
-                Cancel
-              </Button>
-            </div>
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+            {error}
           </div>
         )}
-      </div>
 
-      {/* Desktop Table */}
-      <div className="hidden md:block">
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <TableHeader headers={["Query", "Status", "Results", "Industry", "Last Run", "Actions"]} />
-              <tbody className="divide-y divide-gray-200">
-                {queries.map((query) => (
-                  <tr key={query.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center">
-                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                          <Icon name="search" className="text-green-600" size="sm" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900 text-sm">{query.query}</div>
-                          <div className="text-xs text-gray-500">ID: {query.id}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={getStatusColor(query.status) as "success" | "warning" | "info" | "error"} size="sm">
-                        {query.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-lg font-semibold text-gray-900">{query.results}</div>
-                      <div className="text-xs text-gray-500">results found</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant="info" size="sm">{query.industry}</Badge>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">
-                      {query.lastRun}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex space-x-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => toggleStatus(query.id)}
-                          className="p-1"
-                        >
-                          <Icon name={query.status === "running" ? "close" : "check"} size="sm" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => deleteQuery(query.id)}
-                          className="p-1"
-                        >
-                          <Icon name="delete" size="sm" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      </div>
-
-      {/* Mobile Cards */}
-      <div className="md:hidden space-y-4">
-        {queries.map((query) => (
-          <MobileCard
-            key={query.id}
-            data={{
-              query: query.query,
-              status: query.status,
-              results: `${query.results} results`,
-              industry: query.industry,
-              lastRun: query.lastRun
-            }}
-            actions={
-              <div className="flex space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => toggleStatus(query.id)}
-                >
-                  {query.status === "running" ? "Pause" : "Resume"}
+        {showForm && (
+          <Card className="p-6">
+            <h2 className="text-lg font-semibold mb-4">
+              {editingQuery ? "Edit Query" : "Add New Query"}
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Query
+                </label>
+                <input
+                  type="text"
+                  value={formData.query}
+                  onChange={(e) => setFormData({ ...formData, query: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., 'software development companies'"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  rows={3}
+                  placeholder="Optional description of what this query is for"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                  {editingQuery ? "Update" : "Create"}
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => deleteQuery(query.id)}
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingQuery(null);
+                    setFormData({ query: "", description: "" });
+                  }}
+                  className="bg-gray-500 hover:bg-gray-600"
                 >
-                  Delete
+                  Cancel
                 </Button>
               </div>
-            }
-          />
-        ))}
-      </div>
+            </form>
+          </Card>
+        )}
 
-      {/* Empty State */}
-      {queries.length === 0 && (
-        <Card className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Icon name="search" className="text-gray-400" size="lg" />
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading queries...</p>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No queries yet</h3>
-          <p className="text-gray-500 mb-6">Start by creating your first search query to find leads.</p>
-          <Button onClick={() => setIsAdding(true)}>
-            <Icon name="plus" className="mr-2" />
-            Create Your First Query
-          </Button>
-        </Card>
-      )}
+        ) : (
+          <div className="grid gap-4">
+            {queries.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-gray-600">No queries found. Create your first query!</p>
+              </Card>
+            ) : (
+              queries.map((query) => (
+                <Card key={query.id} className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        "{query.query}"
+                      </h3>
+                      {query.description && (
+                        <p className="text-gray-600 text-sm mb-2">{query.description}</p>
+                      )}
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span>Created: {new Date(query.created_at).toLocaleDateString()}</span>
+                        <span>•</span>
+                        <span>Updated: {new Date(query.updated_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleEdit(query)}
+                        className="bg-yellow-500 hover:bg-yellow-600 text-sm"
+                        size="sm"
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        onClick={() => handleDelete(query.id)}
+                        className="bg-red-500 hover:bg-red-600 text-sm"
+                        size="sm"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

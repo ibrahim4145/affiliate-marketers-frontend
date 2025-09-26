@@ -1,21 +1,55 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiClient, Industry, Query } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Icon from "@/components/ui/Icon";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
-// Static data - no client state needed
-const stats = [
+export default function Home() {
+  const [industries, setIndustries] = useState<Industry[]>([]);
+  const [queries, setQueries] = useState<Query[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const { isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchData();
+    }
+  }, [isAuthenticated]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [industriesData, queriesData] = await Promise.all([
+        apiClient.getIndustries(),
+        apiClient.getQueries()
+      ]);
+      setIndustries(industriesData);
+      setQueries(queriesData);
+    } catch (err) {
+      setError("Failed to fetch data");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const stats = [
     {
       title: "Total Industries",
-      value: "12",
-      change: "+2 this week",
+      value: industries.length.toString(),
+      change: "Manage your categories",
       icon: "industries",
       color: "bg-blue-500"
     },
     {
       title: "Active Queries",
-      value: "48",
-      change: "+12 this week",
+      value: queries.length.toString(),
+      change: "Search queries configured",
       icon: "search",
       color: "bg-green-500"
     },
@@ -35,14 +69,38 @@ const stats = [
     }
   ];
 
-const recentActivity = [
+  const recentActivity = [
     { action: "New industry added", target: "Healthcare", time: "2 hours ago", type: "success" },
     { action: "Query completed", target: "AI startups", time: "4 hours ago", type: "info" },
     { action: "Lead generated", target: "TechCorp Inc", time: "6 hours ago", type: "success" },
     { action: "Industry updated", target: "Finance", time: "1 day ago", type: "info" }
   ];
 
-export default function Home() {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <p className="text-gray-600">Please log in to access this page.</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <DashboardLayout>
       <div className="h-full flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 min-h-screen">
@@ -74,6 +132,12 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {error && (
+          <div className="mx-4 mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+            {error}
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="p-4 pb-3 flex-shrink-0">

@@ -8,9 +8,12 @@ import Card from "@/components/ui/Card";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const [isRegister, setIsRegister] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const [error, setError] = useState("");
+  const { login, register, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -19,17 +22,33 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
     
-    const success = await login(email, password);
-    if (success) {
-      router.push("/");
-    } else {
-      alert("Invalid credentials. Please try again.");
+    try {
+      let success = false;
+      if (isRegister) {
+        success = await register(name, email, password);
+        if (!success) {
+          setError("Registration failed. Email might already be in use.");
+        }
+      } else {
+        success = await login(email, password);
+        if (!success) {
+          setError("Invalid credentials. Please try again.");
+        }
+      }
+      
+      if (success) {
+        router.push("/");
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   if (isLoading) {
@@ -65,8 +84,30 @@ export default function LoginPage() {
         </div>
 
         <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+            
             <div className="space-y-3">
+              {isRegister && (
+                <div>
+                  <label htmlFor="name" className="block text-xs font-medium text-gray-700 mb-1">
+                    Full Name
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your full name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 text-sm"
+                    required={isRegister}
+                  />
+                </div>
+              )}
               <div>
                 <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1">
                   Email
@@ -97,15 +138,17 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center">
-                <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                <span className="ml-2 text-sm text-gray-600">Remember me</span>
-              </label>
-              <a href="#" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                Forgot password?
-              </a>
-            </div>
+            {!isRegister && (
+              <div className="flex items-center justify-between">
+                <label className="flex items-center">
+                  <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                </label>
+                <a href="#" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  Forgot password?
+                </a>
+              </div>
+            )}
 
             <Button 
               type="submit" 
@@ -113,16 +156,29 @@ export default function LoginPage() {
               loading={loading}
               size="sm"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading 
+                ? (isRegister ? "Creating account..." : "Signing in...") 
+                : (isRegister ? "Create Account" : "Sign In")
+              }
             </Button>
           </form>
 
         <div className="mt-4 text-center">
           <p className="text-xs text-gray-600">
-            Don&apos;t have an account?{" "}
-            <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
-              Contact administrator
-            </a>
+            {isRegister ? "Already have an account? " : "Don't have an account? "}
+            <button 
+              type="button"
+              onClick={() => {
+                setIsRegister(!isRegister);
+                setError("");
+                setName("");
+                setEmail("");
+                setPassword("");
+              }}
+              className="text-blue-600 hover:text-blue-700 font-medium"
+            >
+              {isRegister ? "Sign in" : "Create account"}
+            </button>
           </p>
         </div>
         </Card>
