@@ -217,6 +217,7 @@ export default function IndustriesPage() {
                     value={formData.industry_name}
                     onChange={(e) => setFormData({ ...formData, industry_name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                    placeholder="e.g., 'Healthcare'"
                     required
                   />
                 </div>
@@ -229,6 +230,7 @@ export default function IndustriesPage() {
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
                     rows={3}
+                    placeholder="Optional description of what this industry is for"
                   />
                 </div>
                 <div className="flex gap-2">
