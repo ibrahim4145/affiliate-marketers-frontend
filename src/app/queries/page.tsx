@@ -6,14 +6,13 @@ import { apiClient, Query } from "@/lib/api";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
-import Badge from "@/components/ui/Badge";
 import Icon from "@/components/ui/Icon";
 import TableHeader from "@/components/tables/TableHeader";
 import MobileCard from "@/components/tables/MobileCard";
 
 export default function QueriesPage() {
   const [queries, setQueries] = useState<Query[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingQuery, setEditingQuery] = useState<Query | null>(null);
@@ -271,7 +270,7 @@ export default function QueriesPage() {
                               <Icon name="search" className="text-slate-600" size="sm" />
                             </div>
                             <div className="min-w-0">
-                              <div className="font-semibold text-slate-900 truncate">"{query.query}"</div>
+                              <div className="font-semibold text-slate-900 truncate">&quot;{query.query}&quot;</div>
                             </div>
                           </div>
                         </td>

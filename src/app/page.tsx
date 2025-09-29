@@ -11,7 +11,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 export default function Home() {
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [queries, setQueries] = useState<Query[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [error, setError] = useState("");
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -30,9 +30,9 @@ export default function Home() {
       ]);
       setIndustries(industriesData);
       setQueries(queriesData);
-    } catch (err) {
+    } catch (error) {
       setError("Failed to fetch data");
-      console.error(err);
+      console.error(error);
     } finally {
       setLoading(false);
     }
