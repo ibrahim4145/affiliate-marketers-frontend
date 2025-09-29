@@ -5,7 +5,7 @@
   "installCommand": "npm install",
   "outputDirectory": ".next",
   "env": {
-    "NEXT_PUBLIC_API_URL": "@next_public_api_url"
+    "NEXT_PUBLIC_API_URL": "https://affiliate-marketers-41851a96.koyeb.app/api"
   }
 }
 
