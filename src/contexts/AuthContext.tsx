@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setUser(null);
     apiClient.setToken(null);
-    router.push('/login');
+    router.replace('/');
   }, [router]);
 
   // Memoize context value to prevent unnecessary re-renders
