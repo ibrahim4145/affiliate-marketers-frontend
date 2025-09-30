@@ -76,7 +76,7 @@ export default function Sidebar() {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-all duration-200",
+                    "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-all duration-200 cursor-pointer",
                     isActive
                       ? "bg-blue-600 text-white shadow-lg"
                       : "text-slate-300 hover:bg-slate-700 hover:text-white"
@@ -110,7 +110,7 @@ export default function Sidebar() {
               </div>
               <button
                 onClick={logout}
-                className="text-slate-400 hover:text-white transition-colors"
+                className="text-slate-400 hover:text-white transition-all duration-300 p-1.5 rounded-lg hover:bg-slate-800/50 hover:shadow-lg cursor-pointer"
                 title="Logout"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -127,14 +127,6 @@ export default function IndustriesPage() {
             </div>
             <div className="flex space-x-3">
               <Button
-                variant="outline"
-                size="sm"
-                className="bg-white border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300"
-              >
-                <Icon name="edit" className="mr-2" />
-                Export Industries
-              </Button>
-              <Button
                 size="sm"
                 onClick={() => {
                   setShowForm(true);

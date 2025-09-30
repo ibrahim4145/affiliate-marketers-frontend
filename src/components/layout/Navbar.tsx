@@ -79,7 +79,7 @@ export default function Navbar() {
                         key={item.name}
                         href={item.href}
                         className={cn(
-                          "flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-300",
+                          "flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-300 cursor-pointer",
                     isActive
                       ? "bg-slate-800 text-white shadow-lg border border-slate-700"
                       : "text-slate-300 hover:text-white hover:bg-slate-800/50"
@@ -96,7 +96,7 @@ export default function Navbar() {
 
           {/* User Menu */}
           <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2 bg-slate-800/50 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-slate-700/50">
+            <div className="flex items-center space-x-2 bg-slate-800/50 backdrop-blur-sm rounded-lg px-2 py-1.5">
               <div className="w-6 h-6 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center shadow-lg">
                 <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -109,7 +109,7 @@ export default function Navbar() {
             </div>
                   <button
                     onClick={logout}
-                    className="text-slate-400 hover:text-white transition-all duration-300 p-1.5 rounded-lg hover:bg-slate-800/50"
+                    className="text-slate-400 hover:text-white transition-all duration-300 p-1.5 rounded-lg hover:bg-slate-800/50 hover:shadow-lg cursor-pointer"
                     title="Logout"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

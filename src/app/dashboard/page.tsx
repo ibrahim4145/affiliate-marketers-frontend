@@ -113,23 +113,6 @@ export default function Dashboard() {
               </h1>
               <p className="text-slate-600 mt-1 text-sm">Welcome back! Here&apos;s what&apos;s happening with your scraper.</p>
             </div>
-            <div className="flex space-x-3">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="bg-white/80 backdrop-blur-sm border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300"
-              >
-                <Icon name="edit" className="mr-2" />
-                Export Data
-              </Button>
-              <Button 
-                size="sm"
-                className="bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                <Icon name="plus" className="mr-2" />
-                Add New
-              </Button>
-            </div>
           </div>
         </div>
 
@@ -199,10 +182,6 @@ export default function Dashboard() {
                 <Button variant="outline" size="sm" className="w-full justify-start bg-white/50 hover:bg-slate-50 border-slate-300 text-slate-700 text-xs">
                   <Icon name="users" className="mr-2" size="sm" />
                   View Leads
-                </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start bg-white/50 hover:bg-slate-50 border-slate-300 text-slate-700 text-xs">
-                  <Icon name="edit" className="mr-2" size="sm" />
-                  Export Data
                 </Button>
               </div>
             </div>
