@@ -262,7 +262,7 @@ export default function QueriesPage() {
                               <Icon name="search" className="text-slate-600" size="sm" />
                             </div>
                             <div className="min-w-0">
-                              <div className="font-semibold text-slate-900 truncate">&quot;{query.query}&quot;</div>
+                              <div className="font-semibold text-slate-900 truncate">{query.query}</div>
                             </div>
                           </div>
                         </td>
