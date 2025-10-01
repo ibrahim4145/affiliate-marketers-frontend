@@ -53,7 +53,6 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
     
     const matchesSearch = lead.domain.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          lead.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          lead.emails.some(email => email.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          lead.phones.some(phone => phone.phone.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          lead.socials.some(social => social.handle.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -234,7 +233,6 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                             </div>
                             <div className="min-w-0">
                                 <div className="font-semibold text-slate-900 truncate">{lead.domain}</div>
-                                <div className="text-sm text-slate-500 truncate">{lead.description}</div>
                               </div>
                             </div>
                         </td>
@@ -367,7 +365,6 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                             <div className="text-sm text-slate-500 truncate">{lead.title}</div>
                           </div>
                         </div>
-                        <div className="text-xs text-slate-500 mb-2">{lead.description}</div>
                       </div>
                       <Badge variant={getStatusColor(lead) as "success" | "warning" | "info" | "error"} size="sm">
                         {getStatusText(lead)}
