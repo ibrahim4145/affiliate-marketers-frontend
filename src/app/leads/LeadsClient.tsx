@@ -8,7 +8,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Icon from "@/components/ui/Icon";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { fetchLeadsWithContacts, fetchLeadsStats, LeadWithContacts, LeadsStats } from "@/lib/leadsApi";
+import { fetchLeadsWithContacts, fetchLeadsStats, LeadWithContacts, LeadsStats, LeadsResponse, PaginationInfo, Industry } from "@/lib/leadsApi";
 
 interface LeadsClientProps {
   leads?: LeadWithContacts[];
@@ -17,47 +17,205 @@ interface LeadsClientProps {
 export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
   const [leads, setLeads] = useState<LeadWithContacts[]>(initialLeads || []);
   const [stats, setStats] = useState<LeadsStats | null>(null);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [loading, setLoading] = useState(false);
+  const [tableLoading, setTableLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [filterLoading, setFilterLoading] = useState(false);
+  const [industries, setIndustries] = useState<Industry[]>([]);
+  const [industryFilter, setIndustryFilter] = useState("all");
+  
+  // Preloading cache system
+  const [preloadedData, setPreloadedData] = useState<Map<string, LeadsResponse>>(new Map());
+  const [preloadingPages, setPreloadingPages] = useState<Set<number>>(new Set());
 
-  // Fetch data on component mount if not provided
+  // Load initial data - prioritize table data first
   useEffect(() => {
     if (!initialLeads && typeof window !== 'undefined') {
-      const loadData = async () => {
-        try {
-          setLoading(true);
-          setError(null);
-          const [leadsData, statsData] = await Promise.all([
-            fetchLeadsWithContacts(),
-            fetchLeadsStats()
-          ]);
-          setLeads(leadsData);
-          setStats(statsData);
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to load leads');
-        } finally {
-          setLoading(false);
-        }
-      };
-      loadData();
+      // Load table data immediately
+      loadLeadsData(1, searchTerm, filter, "all");
+      // Load stats in background (non-blocking)
+      loadStatsData();
+      // Load industries for filter - COMMENTED OUT
+      // loadIndustries();
     }
   }, [initialLeads]);
 
-  const filteredLeads = leads.filter(lead => {
-    const matchesFilter = filter === "all" || 
-                         (filter === "scraped" && lead.scraped) ||
-                         (filter === "new" && !lead.scraped);
+  // Generate cache key for preloaded data
+  const getCacheKey = (page: number, search: string, filterValue: string, industryValue: string = "all") => {
+    return `${page}-${search}-${filterValue}-${industryValue}`;
+  };
+
+  // Load leads data with smart preloading
+  const loadLeadsData = async (page: number, search: string, filterValue: string, industryValue: string = "all", isPreload: boolean = false) => {
+    const cacheKey = getCacheKey(page, search, filterValue, industryValue);
     
-    const matchesSearch = lead.domain.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.emails.some(email => email.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         lead.phones.some(phone => phone.phone.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         lead.socials.some(social => social.handle.toLowerCase().includes(searchTerm.toLowerCase()));
+    // Check if data is already cached (persistent cache)
+    if (preloadedData.has(cacheKey) && !isPreload) {
+      const cachedData = preloadedData.get(cacheKey)!;
+      setLeads(cachedData.leads);
+      setPagination(cachedData.pagination);
+      setCurrentPage(page);
+      
+      // Keep data in cache for future navigation (persistent cache)
+      // Only trigger background preloading for next pages
+      preloadNextPages(page, search, filterValue, industryValue, cachedData.pagination);
+      return;
+    }
+
+    try {
+      if (!isPreload) {
+        setTableLoading(true);
+        setError(null);
+      }
+      
+      const response = await fetchLeadsWithContacts(page, 50, search, filterValue, industryValue);
+      
+      if (isPreload) {
+        // Store preloaded data in cache
+        setPreloadedData(prev => new Map(prev).set(cacheKey, response));
+        setPreloadingPages(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(page);
+          return newSet;
+        });
+      } else {
+        // Display current page data
+        setLeads(response.leads);
+        setPagination(response.pagination);
+        setCurrentPage(page);
+        
+        // Store current page data in cache for future navigation
+        setPreloadedData(prev => new Map(prev).set(cacheKey, response));
+        
+        // Trigger background preloading for next pages
+        preloadNextPages(page, search, filterValue, industryValue, response.pagination);
+      }
+    } catch (err) {
+      if (!isPreload) {
+        setError(err instanceof Error ? err.message : 'Failed to load leads');
+      }
+    } finally {
+      if (!isPreload) {
+        // Only hide loaders after data is set
+        setTimeout(() => {
+          setTableLoading(false);
+          setSearchLoading(false);
+          setFilterLoading(false);
+        }, 100); // Small delay to ensure smooth transition
+      }
+    }
+  };
+
+  // Preload next 2-3 pages in background
+  const preloadNextPages = (currentPage: number, search: string, filterValue: string, industryValue: string, paginationInfo: PaginationInfo) => {
+    const pagesToPreload = [];
     
-    return matchesFilter && matchesSearch;
-  });
+    // Preload next 2 pages if they exist
+    for (let i = 1; i <= 2; i++) {
+      const nextPage = currentPage + i;
+      if (nextPage <= paginationInfo.total_pages) {
+        const cacheKey = getCacheKey(nextPage, search, filterValue, industryValue);
+        
+        // Only preload if not already cached or currently preloading
+        if (!preloadedData.has(cacheKey) && !preloadingPages.has(nextPage)) {
+          pagesToPreload.push(nextPage);
+        }
+      }
+    }
+    
+    // Start preloading
+    pagesToPreload.forEach(page => {
+      setPreloadingPages(prev => new Set(prev).add(page));
+      loadLeadsData(page, search, filterValue, industryValue, true);
+    });
+  };
+
+  // Load stats data
+  const loadStatsData = async () => {
+    try {
+      setLoading(true);
+      const statsData = await fetchLeadsStats();
+      setStats(statsData);
+    } catch (err) {
+      console.error('Failed to load stats:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load industries data - COMMENTED OUT
+  // const loadIndustries = async () => {
+  //   try {
+  //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/industries`);
+  //     if (response.ok) {
+  //       const industriesData = await response.json();
+  //       setIndustries(industriesData);
+  //     }
+  //   } catch (err) {
+  //     console.error('Failed to load industries:', err);
+  //   }
+  // };
+
+  // Handle search with debouncing
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    
+    // Clear existing timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    
+    // Show loader immediately when typing (for any search)
+    setSearchLoading(true);
+    
+    // Set new timeout for debounced search
+    const timeout = setTimeout(() => {
+      // Clear preloaded cache when search changes
+      setPreloadedData(new Map());
+      setPreloadingPages(new Set());
+      setCurrentPage(1); // Reset to first page on search
+      
+      // Load data (loader will be hidden in loadLeadsData)
+      loadLeadsData(1, value, filter, "all");
+    }, 300); // 300ms debounce for faster response
+    
+    setSearchTimeout(timeout);
+  };
+
+  // Handle filter change
+  const handleFilterChange = (newFilter: string) => {
+    setFilter(newFilter);
+    setFilterLoading(true);
+    setTableLoading(true); // Show table loader immediately
+    // Clear preloaded cache when filter changes
+    setPreloadedData(new Map());
+    setPreloadingPages(new Set());
+    setCurrentPage(1); // Reset to first page on filter change
+    loadLeadsData(1, searchTerm, newFilter, "all");
+  };
+
+  // Handle industry filter change - COMMENTED OUT
+  // const handleIndustryFilterChange = (newIndustryFilter: string) => {
+  //   setIndustryFilter(newIndustryFilter);
+  //   setFilterLoading(true);
+  //   setTableLoading(true); // Show table loader immediately
+  //   // Clear preloaded cache when industry filter changes
+  //   setPreloadedData(new Map());
+  //   setPreloadingPages(new Set());
+  //   setCurrentPage(1); // Reset to first page on industry filter change
+  //   loadLeadsData(1, searchTerm, filter, newIndustryFilter);
+  // };
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    loadLeadsData(page, searchTerm, filter, "all");
+  };
 
   const getStatusColor = (lead: LeadWithContacts) => {
     if (lead.scraped) return "success";
@@ -83,21 +241,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
     };
   };
 
-  // Loading state
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 min-h-screen">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="w-8 h-8 border-4 border-slate-300 border-t-slate-600 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-slate-600">Loading leads...</p>
-            </div>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  // Remove full-screen loading state - show table immediately
 
   // Error state
   if (error) {
@@ -132,15 +276,29 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                 Leads
               </h1>
               <p className="text-slate-600 mt-1 text-sm">Manage and track your potential customers</p>
-            </div>
-            <div className="flex space-x-3">
-              <Button
-                size="sm"
-                className="bg-slate-700 hover:bg-slate-800 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                <Icon name="plus" className="mr-2" />
-                Add Lead
-              </Button>
+              <p className="text-slate-500 mt-1 text-xs">
+                {pagination ? (
+                  <div className="flex items-center">
+                    <span>Page {pagination.page} of {pagination.total_pages} • {pagination.total_count} total leads</span>
+                    {preloadedData.size > 0 && (
+                      <div className="ml-2 flex items-center text-green-600">
+                        <span className="text-xs">📦 {preloadedData.size} cached</span>
+                      </div>
+                    )}
+                    {preloadingPages.size > 0 && (
+                      <div className="ml-2 flex items-center text-blue-600">
+                        <div className="w-2 h-2 border border-blue-300 border-t-blue-600 rounded-full animate-spin mr-1"></div>
+                        <span className="text-xs">Preloading...</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 border border-slate-300 border-t-slate-600 rounded-full animate-spin mr-2"></div>
+                    Loading leads...
+                  </div>
+                )}
+              </p>
             </div>
           </div>
 
@@ -151,7 +309,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                 type="text"
                 placeholder="Search leads by company, name, or domain..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearch(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white shadow-sm hover:shadow-md transition-all duration-300 text-sm"
               />
             </div>
@@ -161,7 +319,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                   key={status}
                   variant={filter === status ? "primary" : "outline"}
                   size="sm"
-                  onClick={() => setFilter(status)}
+                  onClick={() => handleFilterChange(status)}
                   className={filter === status
                     ? "bg-slate-700 hover:bg-slate-800 text-white shadow-lg"
                     : "bg-white border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400"
@@ -170,9 +328,24 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                   {status.charAt(0).toUpperCase() + status.slice(1)}
                 </Button>
               ))}
+              
+              {/* Industry Filter Dropdown - COMMENTED OUT */}
+              {/* <select
+                value={industryFilter}
+                onChange={(e) => handleIndustryFilterChange(e.target.value)}
+                className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all duration-200"
+              >
+                <option value="all">All Industries</option>
+                {industries.map((industry) => (
+                  <option key={industry.id} value={industry.id}>
+                    {industry.name}
+                  </option>
+                ))}
+              </select> */}
             </div>
           </div>
         </div>
+
 
         {/* Stats */}
         <div className="p-4 pb-3">
@@ -198,7 +371,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
             <div className="bg-white/80 backdrop-blur-xl rounded-lg p-4 shadow-lg border border-slate-200/50 hover:shadow-xl transition-all duration-300">
               <div className="text-center">
                 <div className="text-2xl font-bold text-slate-900 mb-1">
-                  {leads.filter(l => !l.scraped).length}
+                  {stats?.unscraped_leads || leads.filter(l => !l.scraped).length}
                 </div>
                 <div className="text-slate-600 font-medium text-sm">New</div>
                 <div className="w-8 h-1 bg-slate-300 rounded-full mx-auto mt-2"></div>
@@ -215,8 +388,20 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1200px]">
                   <TableHeader headers={["Domain", "Title", "Industry", "Emails", "Phones", "Social", "Status"]} />
+                  {(loading || tableLoading || searchLoading || filterLoading) && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center">
+                        <div className="flex flex-col items-center justify-center text-slate-600">
+                          <div className="w-6 h-6 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin mb-3"></div>
+                          <span className="text-sm font-medium">
+                            {searchLoading ? "Searching..." : filterLoading ? "Filtering..." : "Loading leads..."}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                   <tbody className="divide-y divide-slate-100">
-                    {filteredLeads.map((lead) => {
+                    {!(tableLoading || searchLoading || filterLoading) && leads.map((lead) => {
                       const contactCounts = getContactCounts(lead);
                       return (
                       <tr key={lead.id} className="hover:bg-slate-50 transition-all duration-300 group">
@@ -233,7 +418,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                         <td className="px-4 py-3 min-w-[180px]">
                             <div className="font-semibold text-slate-900 truncate text-sm">{lead.title}</div>
                             <div className="text-xs text-slate-500 truncate">ID: {lead.id.slice(-8)}</div>
-                          </td>
+                        </td>
                           <td className="px-4 py-3 min-w-[150px]">
                             <div className="text-sm text-slate-900 truncate font-medium">
                               {lead.industry?.name || "Unknown Industry"}
@@ -241,7 +426,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                             <div className="text-xs text-slate-500 truncate">
                               {lead.industry?.description ? lead.industry.description.slice(0, 30) + "..." : ""}
                             </div>
-                          </td>
+                        </td>
                           <td className="px-4 py-3 min-w-[200px]">
                             {lead.emails.length > 0 ? (
                               <div className="space-y-1">
@@ -257,7 +442,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                             ) : (
                               <div className="text-xs text-slate-400 italic">No emails</div>
                             )}
-                          </td>
+                        </td>
                           <td className="px-4 py-3 min-w-[150px]">
                             {lead.phones.length > 0 ? (
                               <div className="space-y-1">
@@ -273,7 +458,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                             ) : (
                               <div className="text-xs text-slate-400 italic">No phones</div>
                             )}
-                          </td>
+                        </td>
                           <td className="px-4 py-3 min-w-[150px]">
                             {lead.socials.length > 0 ? (
                               <div className="space-y-1">
@@ -306,7 +491,17 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
 
           {/* Mobile Cards */}
           <div className="md:hidden space-y-4">
-            {filteredLeads.map((lead) => {
+            {(loading || tableLoading || searchLoading || filterLoading) && (
+              <Card className="p-6 text-center">
+                <div className="flex flex-col items-center justify-center text-slate-600">
+                  <div className="w-6 h-6 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin mb-3"></div>
+                  <span className="text-sm font-medium">
+                    {searchLoading ? "Searching..." : filterLoading ? "Filtering..." : "Loading leads..."}
+                  </span>
+                </div>
+              </Card>
+            )}
+            {!(tableLoading || searchLoading || filterLoading) && leads.map((lead) => {
               const contactCounts = getContactCounts(lead);
               return (
                 <Card key={lead.id} className="p-4">
@@ -416,8 +611,68 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
             })}
           </div>
 
+          {/* Pagination Controls */}
+          {pagination && pagination.total_pages > 1 && (
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-slate-600">
+                Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total_count)} of {pagination.total_count} leads
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                {pagination.has_prev && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={tableLoading}
+                    className="flex items-center px-4 py-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition-all duration-200"
+                  >
+                    <Icon name="chevron-left" size="sm" className="mr-1" />
+                    Previous
+                  </Button>
+                )}
+                
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, pagination.total_pages) }, (_, i) => {
+                    const pageNum = Math.max(1, Math.min(pagination.total_pages - 4, currentPage - 2)) + i;
+                    if (pageNum > pagination.total_pages) return null;
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={pageNum === currentPage ? "primary" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
+                          pageNum === currentPage
+                            ? "bg-slate-600 text-white shadow-md"
+                            : "bg-white border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400"
+                        }`}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                {pagination.has_next && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={tableLoading}
+                    className="flex items-center px-4 py-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition-all duration-200"
+                  >
+                    Next
+                    <Icon name="chevron-right" size="sm" className="ml-1" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Empty State */}
-          {filteredLeads.length === 0 && (
+          {!(tableLoading || searchLoading || filterLoading) && leads.length === 0 && (
             <Card className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Icon name="users" className="text-gray-400" size="lg" />

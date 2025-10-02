@@ -60,7 +60,22 @@ export interface LeadsStats {
   total_leads: number;
   scraped_leads: number;
   google_done_leads: number;
+  unscraped_leads: number;
   progress_stats: Array<{ _id: string; count: number }>;
+}
+
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total_count: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
+}
+
+export interface LeadsResponse {
+  leads: LeadWithContacts[];
+  pagination: PaginationInfo;
 }
 
 // Fetch all leads
@@ -120,15 +135,34 @@ export async function fetchSocials(): Promise<Social[]> {
   }
 }
 
-// Fetch leads with all related data (industry, emails, phones, socials) in a single call
-export async function fetchLeadsWithContacts(): Promise<LeadWithContacts[]> {
+// Fetch leads with pagination and search
+export async function fetchLeadsWithContacts(
+  page: number = 1,
+  limit: number = 50,
+  search?: string,
+  filter?: string,
+  industryFilter?: string
+): Promise<LeadsResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/leads/combined-data`);
+    const params = new URLSearchParams({
+      skip: ((page - 1) * limit).toString(),
+      limit: limit.toString()
+    });
+    
+    if (search) params.append('search', search);
+    if (filter && filter !== 'all') {
+      if (filter === 'scraped') params.append('scraped', 'true');
+      if (filter === 'new') params.append('scraped', 'false');
+    }
+    if (industryFilter && industryFilter !== 'all') {
+      params.append('industry_id', industryFilter);
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/leads/combined-data?${params}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    const data = await response.json();
-    return data.leads;
+    return await response.json();
   } catch (error) {
     console.error('Error fetching leads with contacts:', error);
     throw error;
