@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import Card from "@/components/ui/Card";
 import TableHeader from "@/components/tables/TableHeader";
 import MobileCard from "@/components/tables/MobileCard";
-import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Icon from "@/components/ui/Icon";
+import HighlightText from "@/components/ui/HighlightText";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { fetchLeadsWithContacts, fetchLeadsStats, LeadWithContacts, LeadsStats, LeadsResponse, PaginationInfo, Industry } from "@/lib/leadsApi";
 
@@ -217,21 +217,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
     loadLeadsData(page, searchTerm, filter, "all");
   };
 
-  const getStatusColor = (lead: LeadWithContacts) => {
-    if (lead.scraped) return "success";
-    return "warning";
-  };
 
-  const getStatusText = (lead: LeadWithContacts) => {
-    if (lead.scraped) return "Scraped";
-    return "New";
-  };
-
-  const getStatusWithIndustry = (lead: LeadWithContacts) => {
-    const status = getStatusText(lead);
-    const industry = lead.industry?.name || "Unknown Industry";
-    return { status, industry };
-  };
 
   const getContactCounts = (lead: LeadWithContacts) => {
     return {
@@ -307,7 +293,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="Search leads by company, name, or domain..."
+                placeholder="Search by domain, title, or industry..."
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white shadow-sm hover:shadow-md transition-all duration-300 text-sm"
@@ -350,47 +336,47 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
         {/* Stats */}
         <div className="p-4 pb-3">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white/80 backdrop-blur-xl rounded-lg p-4 shadow-lg border border-slate-200/50 hover:shadow-xl transition-all duration-300">
+            <div className="bg-white/80 backdrop-blur-xl rounded-lg p-3 shadow-lg border border-slate-200/50 hover:shadow-xl transition-all duration-300">
               <div className="text-center">
-                <div className="text-2xl font-bold text-slate-900 mb-1">
+                <div className="text-lg font-bold text-slate-900 mb-1">
                   {stats?.total_leads || leads.length}
                 </div>
-                <div className="text-slate-600 font-medium text-sm">Total Leads</div>
-                <div className="w-8 h-1 bg-slate-300 rounded-full mx-auto mt-2"></div>
+                <div className="text-slate-600 font-medium text-xs">Total Leads</div>
+                <div className="w-6 h-1 bg-slate-300 rounded-full mx-auto mt-1"></div>
               </div>
             </div>
-            <div className="bg-white/80 backdrop-blur-xl rounded-lg p-4 shadow-lg border border-slate-200/50 hover:shadow-xl transition-all duration-300">
+            <div className="bg-white/80 backdrop-blur-xl rounded-lg p-3 shadow-lg border border-slate-200/50 hover:shadow-xl transition-all duration-300">
               <div className="text-center">
-                <div className="text-2xl font-bold text-slate-900 mb-1">
+                <div className="text-lg font-bold text-slate-900 mb-1">
                   {stats?.scraped_leads || leads.filter(l => l.scraped).length}
                 </div>
-                <div className="text-slate-600 font-medium text-sm">Scraped</div>
-                <div className="w-8 h-1 bg-slate-300 rounded-full mx-auto mt-2"></div>
+                <div className="text-slate-600 font-medium text-xs">Scraped</div>
+                <div className="w-6 h-1 bg-slate-300 rounded-full mx-auto mt-1"></div>
               </div>
             </div>
-            <div className="bg-white/80 backdrop-blur-xl rounded-lg p-4 shadow-lg border border-slate-200/50 hover:shadow-xl transition-all duration-300">
+            <div className="bg-white/80 backdrop-blur-xl rounded-lg p-3 shadow-lg border border-slate-200/50 hover:shadow-xl transition-all duration-300">
               <div className="text-center">
-                <div className="text-2xl font-bold text-slate-900 mb-1">
+                <div className="text-lg font-bold text-slate-900 mb-1">
                   {stats?.unscraped_leads || leads.filter(l => !l.scraped).length}
                 </div>
-                <div className="text-slate-600 font-medium text-sm">New</div>
-                <div className="w-8 h-1 bg-slate-300 rounded-full mx-auto mt-2"></div>
+                <div className="text-slate-600 font-medium text-xs">New</div>
+                <div className="w-6 h-1 bg-slate-300 rounded-full mx-auto mt-1"></div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Content Area */}
-        <div className="px-4 pb-4">
+        <div className="px-2 pb-4">
           {/* Desktop Table */}
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             <div className="bg-white/80 backdrop-blur-xl rounded-lg shadow-lg border border-slate-200/50 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[1200px]">
-                  <TableHeader headers={["Domain", "Title", "Industry", "Emails", "Phones", "Social", "Status"]} />
+              <div className="overflow-hidden">
+                <table className="w-full text-xs" style={{ tableLayout: 'fixed' }}>
+                  <TableHeader headers={["Domain", "Title", "Industry", "Emails", "Phones", "Social"]} />
                   {(loading || tableLoading || searchLoading || filterLoading) && (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center">
+                      <td colSpan={6} className="px-4 py-8 text-center">
                         <div className="flex flex-col items-center justify-center text-slate-600">
                           <div className="w-6 h-6 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin mb-3"></div>
                           <span className="text-sm font-medium">
@@ -404,82 +390,83 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                     {!(tableLoading || searchLoading || filterLoading) && leads.map((lead) => {
                       const contactCounts = getContactCounts(lead);
                       return (
-                      <tr key={lead.id} className="hover:bg-slate-50 transition-all duration-300 group">
-                          <td className="px-4 py-3 min-w-[200px]">
+                      <tr key={lead.id} className="hover:bg-slate-50 transition-all duration-300 group h-12">
+                          <td className="px-2 py-2" style={{ width: '220px' }}>
                           <div className="flex items-center">
-                            <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0 shadow-sm group-hover:shadow-md transition-all duration-300">
+                            <div className="w-5 h-5 bg-slate-100 rounded flex items-center justify-center mr-2 flex-shrink-0 shadow-sm group-hover:shadow-md transition-all duration-300">
                                 <Icon name="globe" className="text-slate-600" size="sm" />
                             </div>
                             <div className="min-w-0">
-                                <div className="font-semibold text-slate-900 truncate">{lead.domain}</div>
+                                <div className="font-medium text-slate-900 text-sm break-all">
+                                  <HighlightText text={lead.domain} searchTerm={searchTerm} />
+                                </div>
                               </div>
                             </div>
                         </td>
-                        <td className="px-4 py-3 min-w-[180px]">
-                            <div className="font-semibold text-slate-900 truncate text-sm">{lead.title}</div>
-                            <div className="text-xs text-slate-500 truncate">ID: {lead.id.slice(-8)}</div>
-                        </td>
-                          <td className="px-4 py-3 min-w-[150px]">
-                            <div className="text-sm text-slate-900 truncate font-medium">
-                              {lead.industry?.name || "Unknown Industry"}
+                        <td className="px-2 py-2" style={{ width: '280px' }}>
+                            <div className="font-medium text-slate-900 truncate text-xs">
+                              <HighlightText text={lead.title} searchTerm={searchTerm} />
                             </div>
-                            <div className="text-xs text-slate-500 truncate">
-                              {lead.industry?.description ? lead.industry.description.slice(0, 30) + "..." : ""}
+                            <div className="text-xs text-slate-500 truncate">ID: {lead.id.slice(-6)}</div>
+                        </td>
+                          <td className="px-2 py-2" style={{ width: '120px' }}>
+                            <div className="text-xs text-slate-900 truncate font-medium">
+                              <HighlightText text={lead.industry?.name || "Unknown"} searchTerm={searchTerm} />
                             </div>
                         </td>
-                          <td className="px-4 py-3 min-w-[200px]">
+                          <td className="px-2 py-2" style={{ width: '240px' }}>
                             {lead.emails.length > 0 ? (
                               <div className="space-y-1">
-                                {lead.emails.slice(0, 2).map((email, index) => (
+                                {lead.emails.slice(0, 1).map((email, index) => (
                                   <div key={index} className="text-xs text-slate-900 truncate font-medium">
                                     {email.email}
                                   </div>
                                 ))}
-                                {lead.emails.length > 2 && (
-                                  <div className="text-xs text-slate-500">+{lead.emails.length - 2} more</div>
+                                {lead.emails.length > 1 && (
+                                  <div className="text-xs text-slate-500">+{lead.emails.length - 1}</div>
                                 )}
                               </div>
                             ) : (
-                              <div className="text-xs text-slate-400 italic">No emails</div>
+                              <div className="text-xs text-slate-400 italic">-</div>
                             )}
                         </td>
-                          <td className="px-4 py-3 min-w-[150px]">
+                          <td className="px-2 py-2" style={{ width: '100px' }}>
                             {lead.phones.length > 0 ? (
                               <div className="space-y-1">
-                                {lead.phones.slice(0, 2).map((phone, index) => (
+                                {lead.phones.slice(0, 1).map((phone, index) => (
                                   <div key={index} className="text-xs text-slate-900 truncate font-medium">
                                     {phone.phone}
                                   </div>
                                 ))}
-                                {lead.phones.length > 2 && (
-                                  <div className="text-xs text-slate-500">+{lead.phones.length - 2} more</div>
+                                {lead.phones.length > 1 && (
+                                  <div className="text-xs text-slate-500">+{lead.phones.length - 1}</div>
                                 )}
                               </div>
                             ) : (
-                              <div className="text-xs text-slate-400 italic">No phones</div>
+                              <div className="text-xs text-slate-400 italic">-</div>
                             )}
                         </td>
-                          <td className="px-4 py-3 min-w-[150px]">
+                          <td className="px-2 py-2" style={{ width: '130px' }}>
                             {lead.socials.length > 0 ? (
                               <div className="space-y-1">
-                                {lead.socials.slice(0, 2).map((social, index) => (
+                                {lead.socials.slice(0, 1).map((social, index) => (
                                   <div key={index} className="text-xs text-slate-900 truncate font-medium">
                                     <span className="text-slate-500">{social.platform}:</span> {social.handle}
                                   </div>
                                 ))}
-                                {lead.socials.length > 2 && (
-                                  <div className="text-xs text-slate-500">+{lead.socials.length - 2} more</div>
+                                {lead.socials.length > 1 && (
+                                  <div className="text-xs text-slate-500">+{lead.socials.length - 1}</div>
                                 )}
                               </div>
                             ) : (
-                              <div className="text-xs text-slate-400 italic">No social</div>
+                              <div className="text-xs text-slate-400 italic">-</div>
                             )}
                         </td>
-                        <td className="px-4 py-3">
+                        {/*<td className="px-4 py-3">
                             <Badge variant={getStatusColor(lead) as "success" | "warning" | "info" | "error"} size="sm">
                               {getStatusText(lead)}
                             </Badge>
-                        </td>
+                        </td>*/}
                       </tr>
                       );
                     })}
@@ -490,7 +477,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
           </div>
 
           {/* Mobile Cards */}
-          <div className="md:hidden space-y-4">
+          <div className="lg:hidden space-y-4">
             {(loading || tableLoading || searchLoading || filterLoading) && (
               <Card className="p-6 text-center">
                 <div className="flex flex-col items-center justify-center text-slate-600">
@@ -514,23 +501,22 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                             <Icon name="globe" className="text-slate-600" size="sm" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="font-semibold text-slate-900 truncate">{lead.domain}</div>
-                            <div className="text-sm text-slate-500 truncate">{lead.title}</div>
+                            <div className="font-semibold text-slate-900 break-all text-sm">
+                              <HighlightText text={lead.domain} searchTerm={searchTerm} />
+                            </div>
+                            <div className="text-xs text-slate-500 truncate">
+                              <HighlightText text={lead.title} searchTerm={searchTerm} />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant={getStatusColor(lead) as "success" | "warning" | "info" | "error"} size="sm">
-                          {getStatusText(lead)}
-                        </Badge>
                       </div>
                     </div>
 
                     {/* Industry Information */}
                     <div className="mb-3 p-2 bg-slate-50 rounded-lg">
                       <div className="text-xs font-medium text-slate-700 mb-1">Industry</div>
-                      <div className="text-sm text-slate-900 font-medium">
-                        {lead.industry?.name || "Unknown Industry"}
+                      <div className="text-xs text-slate-900 font-medium">
+                        <HighlightText text={lead.industry?.name || "Unknown Industry"} searchTerm={searchTerm} />
                       </div>
                       {lead.industry?.description && (
                         <div className="text-xs text-slate-500 mt-1">

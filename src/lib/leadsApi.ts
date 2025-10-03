@@ -158,6 +158,8 @@ export async function fetchLeadsWithContacts(
       params.append('industry_id', industryFilter);
     }
     
+    // Add cache-busting parameter
+    params.append('_t', Date.now().toString());
     const response = await fetch(`${API_BASE_URL}/leads/combined-data?${params}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
