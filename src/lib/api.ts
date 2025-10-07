@@ -9,9 +9,18 @@ export interface User {
   updated_at: string;
 }
 
-export interface Industry {
+export interface Niche {
   id: string;
-  industry_name: string;
+  niche_name: string;
+  description?: string;
+  category_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Category {
+  id: string;
+  category_name: string;
   description?: string;
   created_at: string;
   updated_at: string;
@@ -111,31 +120,62 @@ class ApiClient {
     return this.request<User>('/auth/me');
   }
 
-  // Industries endpoints
-  async getIndustries(): Promise<Industry[]> {
-    return this.request<Industry[]>('/industries/');
+  // Niches endpoints
+  async getNiches(): Promise<Niche[]> {
+    const response = await this.request<{niches: Niche[]}>('/niches/');
+    return response.niches;
   }
 
-  async getIndustry(id: string): Promise<Industry> {
-    return this.request<Industry>(`/industries/${id}`);
+  async getNiche(id: string): Promise<Niche> {
+    return this.request<Niche>(`/niches/${id}`);
   }
 
-  async createIndustry(industry: Omit<Industry, 'id' | 'created_at' | 'updated_at'>): Promise<Industry> {
-    return this.request<Industry>('/industries/', {
+  async createNiche(niche: Omit<Niche, 'id' | 'created_at' | 'updated_at'>): Promise<Niche> {
+    return this.request<Niche>('/niches/', {
       method: 'POST',
-      body: JSON.stringify(industry),
+      body: JSON.stringify(niche),
     });
   }
 
-  async updateIndustry(id: string, industry: Partial<Omit<Industry, 'id' | 'created_at' | 'updated_at'>>): Promise<Industry> {
-    return this.request<Industry>(`/industries/${id}`, {
+  async updateNiche(id: string, niche: Partial<Omit<Niche, 'id' | 'created_at' | 'updated_at'>>): Promise<Niche> {
+    return this.request<Niche>(`/niches/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(industry),
+      body: JSON.stringify(niche),
     });
   }
 
-  async deleteIndustry(id: string): Promise<{ message: string }> {
-    return this.request<{ message: string }>(`/industries/${id}`, {
+  async deleteNiche(id: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/niches/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Categories endpoints
+  async getCategories(): Promise<Category[]> {
+    const response = await this.request<{categories: Category[]}>('/categories/');
+    return response.categories;
+  }
+
+  async getCategory(id: string): Promise<Category> {
+    return this.request<Category>(`/categories/${id}`);
+  }
+
+  async createCategory(category: Omit<Category, 'id' | 'created_at' | 'updated_at'>): Promise<Category> {
+    return this.request<Category>('/categories/', {
+      method: 'POST',
+      body: JSON.stringify(category),
+    });
+  }
+
+  async updateCategory(id: string, category: Partial<Omit<Category, 'id' | 'created_at' | 'updated_at'>>): Promise<Category> {
+    return this.request<Category>(`/categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(category),
+    });
+  }
+
+  async deleteCategory(id: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/categories/${id}`, {
       method: 'DELETE',
     });
   }

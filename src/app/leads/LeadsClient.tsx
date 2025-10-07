@@ -8,7 +8,7 @@ import Button from "@/components/ui/Button";
 import Icon from "@/components/ui/Icon";
 import HighlightText from "@/components/ui/HighlightText";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { fetchLeadsWithContacts, fetchLeadsStats, LeadWithContacts, LeadsStats, LeadsResponse, PaginationInfo, Industry } from "@/lib/leadsApi";
+import { fetchLeadsWithContacts, fetchLeadsStats, fetchNiches, LeadWithContacts, LeadsStats, LeadsResponse, PaginationInfo, Niche } from "@/lib/leadsApi";
 
 interface LeadsClientProps {
   leads?: LeadWithContacts[];
@@ -27,8 +27,8 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [filterLoading, setFilterLoading] = useState(false);
-  const [industries, setIndustries] = useState<Industry[]>([]);
-  const [industryFilter, setIndustryFilter] = useState("all");
+  const [niches, setNiches] = useState<Niche[]>([]);
+  const [nicheFilter, setNicheFilter] = useState("all");
   
   // Preloading cache system
   const [preloadedData, setPreloadedData] = useState<Map<string, LeadsResponse>>(new Map());
@@ -38,22 +38,22 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
   useEffect(() => {
     if (!initialLeads && typeof window !== 'undefined') {
       // Load table data immediately
-      loadLeadsData(1, searchTerm, filter, "all");
+      loadLeadsData(1, searchTerm, filter, nicheFilter);
       // Load stats in background (non-blocking)
       loadStatsData();
-      // Load industries for filter - COMMENTED OUT
-      // loadIndustries();
+      // Load niches for filter
+      loadNiches();
     }
   }, [initialLeads]);
 
   // Generate cache key for preloaded data
-  const getCacheKey = (page: number, search: string, filterValue: string, industryValue: string = "all") => {
-    return `${page}-${search}-${filterValue}-${industryValue}`;
+  const getCacheKey = (page: number, search: string, filterValue: string, nicheValue: string = "all") => {
+    return `${page}-${search}-${filterValue}-${nicheValue}`;
   };
 
   // Load leads data with smart preloading
-  const loadLeadsData = async (page: number, search: string, filterValue: string, industryValue: string = "all", isPreload: boolean = false) => {
-    const cacheKey = getCacheKey(page, search, filterValue, industryValue);
+  const loadLeadsData = async (page: number, search: string, filterValue: string, nicheValue: string = "all", isPreload: boolean = false) => {
+    const cacheKey = getCacheKey(page, search, filterValue, nicheValue);
     
     // Check if data is already cached (persistent cache)
     if (preloadedData.has(cacheKey) && !isPreload) {
@@ -64,7 +64,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
       
       // Keep data in cache for future navigation (persistent cache)
       // Only trigger background preloading for next pages
-      preloadNextPages(page, search, filterValue, industryValue, cachedData.pagination);
+      preloadNextPages(page, search, filterValue, nicheValue, cachedData.pagination);
       return;
     }
 
@@ -74,7 +74,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
         setError(null);
       }
       
-      const response = await fetchLeadsWithContacts(page, 50, search, filterValue, industryValue);
+      const response = await fetchLeadsWithContacts(page, 50, search, filterValue, nicheValue);
       
       if (isPreload) {
         // Store preloaded data in cache
@@ -94,7 +94,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
         setPreloadedData(prev => new Map(prev).set(cacheKey, response));
         
         // Trigger background preloading for next pages
-        preloadNextPages(page, search, filterValue, industryValue, response.pagination);
+        preloadNextPages(page, search, filterValue, nicheValue, response.pagination);
       }
     } catch (err) {
       if (!isPreload) {
@@ -113,14 +113,14 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
   };
 
   // Preload next 2-3 pages in background
-  const preloadNextPages = (currentPage: number, search: string, filterValue: string, industryValue: string, paginationInfo: PaginationInfo) => {
+  const preloadNextPages = (currentPage: number, search: string, filterValue: string, nicheValue: string, paginationInfo: PaginationInfo) => {
     const pagesToPreload = [];
     
     // Preload next 2 pages if they exist
     for (let i = 1; i <= 2; i++) {
       const nextPage = currentPage + i;
       if (nextPage <= paginationInfo.total_pages) {
-        const cacheKey = getCacheKey(nextPage, search, filterValue, industryValue);
+        const cacheKey = getCacheKey(nextPage, search, filterValue, nicheValue);
         
         // Only preload if not already cached or currently preloading
         if (!preloadedData.has(cacheKey) && !preloadingPages.has(nextPage)) {
@@ -132,7 +132,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
     // Start preloading
     pagesToPreload.forEach(page => {
       setPreloadingPages(prev => new Set(prev).add(page));
-      loadLeadsData(page, search, filterValue, industryValue, true);
+      loadLeadsData(page, search, filterValue, nicheValue, true);
     });
   };
 
@@ -149,18 +149,15 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
     }
   };
 
-  // Load industries data - COMMENTED OUT
-  // const loadIndustries = async () => {
-  //   try {
-  //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/industries`);
-  //     if (response.ok) {
-  //       const industriesData = await response.json();
-  //       setIndustries(industriesData);
-  //     }
-  //   } catch (err) {
-  //     console.error('Failed to load industries:', err);
-  //   }
-  // };
+  // Load niches data
+  const loadNiches = async () => {
+    try {
+      const nichesData = await fetchNiches();
+      setNiches(nichesData);
+    } catch (err) {
+      console.error('Failed to load niches:', err);
+    }
+  };
 
   // Handle search with debouncing
   const handleSearch = (value: string) => {
@@ -182,7 +179,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
       setCurrentPage(1); // Reset to first page on search
       
       // Load data (loader will be hidden in loadLeadsData)
-      loadLeadsData(1, value, filter, "all");
+      loadLeadsData(1, value, filter, nicheFilter);
     }, 300); // 300ms debounce for faster response
     
     setSearchTimeout(timeout);
@@ -197,24 +194,24 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
     setPreloadedData(new Map());
     setPreloadingPages(new Set());
     setCurrentPage(1); // Reset to first page on filter change
-    loadLeadsData(1, searchTerm, newFilter, "all");
+    loadLeadsData(1, searchTerm, newFilter, nicheFilter);
   };
 
-  // Handle industry filter change - COMMENTED OUT
-  // const handleIndustryFilterChange = (newIndustryFilter: string) => {
-  //   setIndustryFilter(newIndustryFilter);
-  //   setFilterLoading(true);
-  //   setTableLoading(true); // Show table loader immediately
-  //   // Clear preloaded cache when industry filter changes
-  //   setPreloadedData(new Map());
-  //   setPreloadingPages(new Set());
-  //   setCurrentPage(1); // Reset to first page on industry filter change
-  //   loadLeadsData(1, searchTerm, filter, newIndustryFilter);
-  // };
+  // Handle niche filter change
+  const handleNicheFilterChange = (newNicheFilter: string) => {
+    setNicheFilter(newNicheFilter);
+    setFilterLoading(true);
+    setTableLoading(true); // Show table loader immediately
+    // Clear preloaded cache when niche filter changes
+    setPreloadedData(new Map());
+    setPreloadingPages(new Set());
+    setCurrentPage(1); // Reset to first page on niche filter change
+    loadLeadsData(1, searchTerm, filter, newNicheFilter);
+  };
 
   // Handle page change
   const handlePageChange = (page: number) => {
-    loadLeadsData(page, searchTerm, filter, "all");
+    loadLeadsData(page, searchTerm, filter, nicheFilter);
   };
 
 
@@ -293,7 +290,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="Search by domain, title, or industry..."
+                placeholder="Search by domain, title, or niche..."
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white shadow-sm hover:shadow-md transition-all duration-300 text-sm"
@@ -315,19 +312,19 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                 </Button>
               ))}
               
-              {/* Industry Filter Dropdown - COMMENTED OUT */}
-              {/* <select
-                value={industryFilter}
-                onChange={(e) => handleIndustryFilterChange(e.target.value)}
+              {/* Niche Filter Dropdown */}
+              <select
+                value={nicheFilter}
+                onChange={(e) => handleNicheFilterChange(e.target.value)}
                 className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all duration-200"
               >
-                <option value="all">All Industries</option>
-                {industries.map((industry) => (
-                  <option key={industry.id} value={industry.id}>
-                    {industry.name}
+                <option value="all">All Niches</option>
+                {niches.map((niche) => (
+                  <option key={niche.id} value={niche.id}>
+                    {niche.name}
                   </option>
                 ))}
-              </select> */}
+              </select>
             </div>
           </div>
         </div>
@@ -373,7 +370,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
             <div className="bg-white/80 backdrop-blur-xl rounded-lg shadow-lg border border-slate-200/50 overflow-hidden">
               <div className="overflow-hidden">
                 <table className="w-full text-xs" style={{ tableLayout: 'fixed' }}>
-                  <TableHeader headers={["Domain", "Title", "Industry", "Emails", "Phones", "Social"]} />
+                  <TableHeader headers={["Domain", "Title", "Niche", "Emails", "Phones", "Social"]} />
                   {(loading || tableLoading || searchLoading || filterLoading) && (
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center">
@@ -411,7 +408,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                         </td>
                           <td className="px-2 py-2" style={{ width: '120px' }}>
                             <div className="text-xs text-slate-900 truncate font-medium">
-                              <HighlightText text={lead.industry?.name || "Unknown"} searchTerm={searchTerm} />
+                              <HighlightText text={lead.niche?.name || "Unknown"} searchTerm={searchTerm} />
                             </div>
                         </td>
                           <td className="px-2 py-2" style={{ width: '240px' }}>
@@ -512,15 +509,15 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                       </div>
                     </div>
 
-                    {/* Industry Information */}
+                    {/* Niche Information */}
                     <div className="mb-3 p-2 bg-slate-50 rounded-lg">
-                      <div className="text-xs font-medium text-slate-700 mb-1">Industry</div>
+                      <div className="text-xs font-medium text-slate-700 mb-1">Niche</div>
                       <div className="text-xs text-slate-900 font-medium">
-                        <HighlightText text={lead.industry?.name || "Unknown Industry"} searchTerm={searchTerm} />
+                        <HighlightText text={lead.niche?.name || "Unknown Niche"} searchTerm={searchTerm} />
                       </div>
-                      {lead.industry?.description && (
+                      {lead.niche?.description && (
                         <div className="text-xs text-slate-500 mt-1">
-                          {lead.industry.description}
+                          {lead.niche.description}
                         </div>
                       )}
                     </div>

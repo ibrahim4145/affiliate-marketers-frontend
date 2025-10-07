@@ -5,7 +5,7 @@ import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Affiliate Marketers Dashboard",
-  description: "Professional Dashboard for Industries, Queries, and Leads Management",
+  description: "Professional Dashboard for Categories, Niches, Queries, and Leads Management",
 };
 
 // Loading component for better UX

@@ -41,16 +41,25 @@ export interface Social {
   updated_at: string;
 }
 
-export interface Industry {
+export interface Niche {
   id: string;
   name: string;
+  description: string;
+  category_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Category {
+  id: string;
+  category_name: string;
   description: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface LeadWithContacts extends Lead {
-  industry: Industry | null;
+  niche: Niche | null;
   emails: Email[];
   phones: Phone[];
   socials: Social[];
@@ -242,6 +251,67 @@ export async function deleteLead(leadId: string): Promise<void> {
     }
   } catch (error) {
     console.error('Error deleting lead:', error);
+    throw error;
+  }
+}
+
+// Fetch all niches
+export async function fetchNiches(): Promise<Niche[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/niches/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    // Map backend response to frontend interface
+    const niches = (data.niches || []).map((niche: any) => ({
+      id: niche.id,
+      name: niche.niche_name, // Map niche_name to name
+      description: niche.description,
+      category_id: niche.category_id,
+      created_at: niche.created_at,
+      updated_at: niche.updated_at
+    }));
+    return niches;
+  } catch (error) {
+    console.error('Error fetching niches:', error);
+    throw error;
+  }
+}
+
+// Fetch all categories
+export async function fetchCategories(): Promise<Category[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/categories/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    // Map backend response to frontend interface
+    const categories = (data.categories || []).map((category: any) => ({
+      id: category.id,
+      category_name: category.category_name,
+      description: category.description,
+      created_at: category.created_at,
+      updated_at: category.updated_at
+    }));
+    return categories;
+  } catch (error) {
+    console.error('Error fetching categories:', error);
     throw error;
   }
 }

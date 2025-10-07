@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiClient, Industry, Query } from "@/lib/api";
+import { apiClient, Niche, Category, Query } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Icon from "@/components/ui/Icon";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 export default function Dashboard() {
-  const [industries, setIndustries] = useState<Industry[]>([]);
+  const [niches, setNiches] = useState<Niche[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [queries, setQueries] = useState<Query[]>([]);
   const [, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,11 +25,13 @@ export default function Dashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [industriesData, queriesData] = await Promise.all([
-        apiClient.getIndustries(),
+      const [nichesData, categoriesData, queriesData] = await Promise.all([
+        apiClient.getNiches(),
+        apiClient.getCategories(),
         apiClient.getQueries()
       ]);
-      setIndustries(industriesData);
+      setNiches(nichesData);
+      setCategories(categoriesData);
       setQueries(queriesData);
     } catch (error) {
       setError("Failed to fetch data");
@@ -40,11 +43,18 @@ export default function Dashboard() {
 
   const stats = [
     {
-      title: "Total Industries",
-      value: industries.length.toString(),
+      title: "Total Categories",
+      value: categories.length.toString(),
       change: "Manage your categories",
       icon: "industries",
       color: "bg-slate-500"
+    },
+    {
+      title: "Total Niches",
+      value: niches.length.toString(),
+      change: "Manage your niches",
+      icon: "industries",
+      color: "bg-blue-500"
     },
     {
       title: "Active Queries",
@@ -173,7 +183,11 @@ export default function Dashboard() {
               <div className="space-y-2">
                 <Button variant="outline" size="sm" className="w-full justify-start bg-white/50 hover:bg-slate-50 border-slate-300 text-slate-700 text-xs">
                   <Icon name="industries" className="mr-2" size="sm" />
-                  Manage Industries
+                  Manage Categories
+                </Button>
+                <Button variant="outline" size="sm" className="w-full justify-start bg-white/50 hover:bg-slate-50 border-slate-300 text-slate-700 text-xs">
+                  <Icon name="industries" className="mr-2" size="sm" />
+                  Manage Niches
                 </Button>
                 <Button variant="outline" size="sm" className="w-full justify-start bg-white/50 hover:bg-slate-50 border-slate-300 text-slate-700 text-xs">
                   <Icon name="search" className="mr-2" size="sm" />
