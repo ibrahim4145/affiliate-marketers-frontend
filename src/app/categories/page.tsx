@@ -6,14 +6,13 @@ import { apiClient, Category } from "@/lib/api";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
-import Badge from "@/components/ui/Badge";
 import Icon from "@/components/ui/Icon";
 import TableHeader from "@/components/tables/TableHeader";
 import MobileCard from "@/components/tables/MobileCard";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);

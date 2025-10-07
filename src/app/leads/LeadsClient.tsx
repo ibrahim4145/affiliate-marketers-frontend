@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Card from "@/components/ui/Card";
 import TableHeader from "@/components/tables/TableHeader";
-import MobileCard from "@/components/tables/MobileCard";
 import Button from "@/components/ui/Button";
 import Icon from "@/components/ui/Icon";
 import HighlightText from "@/components/ui/HighlightText";
@@ -44,7 +43,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
       // Load niches for filter
       loadNiches();
     }
-  }, [initialLeads]);
+  }, [initialLeads, searchTerm, filter, nicheFilter]);
 
   // Generate cache key for preloaded data
   const getCacheKey = (page: number, search: string, filterValue: string, nicheValue: string = "all") => {
@@ -385,7 +384,6 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                   )}
                   <tbody className="divide-y divide-slate-100">
                     {!(tableLoading || searchLoading || filterLoading) && leads.map((lead) => {
-                      const contactCounts = getContactCounts(lead);
                       return (
                       <tr key={lead.id} className="hover:bg-slate-50 transition-all duration-300 group h-12">
                           <td className="px-2 py-2" style={{ width: '220px' }}>

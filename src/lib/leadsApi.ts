@@ -271,7 +271,7 @@ export async function fetchNiches(): Promise<Niche[]> {
 
     const data = await response.json();
     // Map backend response to frontend interface
-    const niches = (data.niches || []).map((niche: any) => ({
+    const niches = (data.niches || []).map((niche: { id: string; niche_name: string; description: string; category_id: string; created_at: string; updated_at: string }) => ({
       id: niche.id,
       name: niche.niche_name, // Map niche_name to name
       description: niche.description,
@@ -302,7 +302,7 @@ export async function fetchCategories(): Promise<Category[]> {
 
     const data = await response.json();
     // Map backend response to frontend interface
-    const categories = (data.categories || []).map((category: any) => ({
+    const categories = (data.categories || []).map((category: { id: string; category_name: string; description: string; created_at: string; updated_at: string }) => ({
       id: category.id,
       category_name: category.category_name,
       description: category.description,

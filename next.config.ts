@@ -14,8 +14,7 @@ const nextConfig: NextConfig = {
   // Enable compression
   compress: true,
   
-  // Optimize CSS
-  swcMinify: true,
+  // Optimize CSS (swcMinify is enabled by default in Next.js 15)
   
   // Bundle optimization
   webpack: (config, { dev, isServer }) => {

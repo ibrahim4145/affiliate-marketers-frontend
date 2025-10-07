@@ -14,7 +14,7 @@ import MobileCard from "@/components/tables/MobileCard";
 export default function NichesPage() {
   const [niches, setNiches] = useState<Niche[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingNiche, setEditingNiche] = useState<Niche | null>(null);
@@ -314,7 +314,7 @@ export default function NichesPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3 min-w-[150px]">
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="default" className="text-xs">
                             {getCategoryName(niche.category_id)}
                           </Badge>
                         </td>

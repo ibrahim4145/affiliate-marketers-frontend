@@ -33,7 +33,7 @@ interface SubQuery {
 export default function SubQueriesPage() {
   const [subQueries, setSubQueries] = useState<SubQuery[]>([]);
   const [queries, setQueries] = useState<Query[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
