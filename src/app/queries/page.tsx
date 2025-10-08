@@ -101,9 +101,7 @@ export default function QueriesPage() {
     );
   }
 
-  if (!isAuthenticated) {
-    return null; // Redirect handled by ProtectedRoute
-  }
+  // Do not return early here; allow DashboardLayout's ProtectedRoute to handle redirect
 
   return (
     <DashboardLayout>

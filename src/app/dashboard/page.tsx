@@ -101,9 +101,7 @@ export default function Dashboard() {
     );
   }
 
-  if (!isAuthenticated) {
-    return null; // Redirect handled by ProtectedRoute
-  }
+  // Do not return early here; allow DashboardLayout's ProtectedRoute to handle redirect
   return (
     <DashboardLayout>
       <div className="h-full flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 min-h-screen">
