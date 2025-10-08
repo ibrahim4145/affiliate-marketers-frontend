@@ -1,5 +1,5 @@
 // API service for leads and contact data
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 export interface Lead {
   id: string;
@@ -289,7 +289,7 @@ export async function fetchNiches(): Promise<Niche[]> {
 // Fetch all categories
 export async function fetchCategories(): Promise<Category[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/categories/`, {
+    const response = await fetch(`${API_BASE_URL}/categories/`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
