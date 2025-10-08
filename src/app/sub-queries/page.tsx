@@ -8,7 +8,7 @@ import Button from "@/components/ui/Button";
 import Icon from "@/components/ui/Icon";
 import TableHeader from "@/components/tables/TableHeader";
 import MobileCard from "@/components/tables/MobileCard";
-import { apiClient, Query, SubQueryBase, SubQueryWithParent } from "@/lib/api";
+import { apiClient, Query, SubQueryWithParent, SubQueryBase } from "@/lib/api";
 
 // Types now come from api client
 
@@ -20,7 +20,7 @@ export default function SubQueriesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingSubQuery, setEditingSubQuery] = useState<SubQueryWithParent | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Omit<SubQueryBase, 'id' | 'created_at' | 'updated_at'>>({
     query_id: "",
     sub_query: "",
     added_by: "",
@@ -64,17 +64,17 @@ export default function SubQueriesPage() {
     e.preventDefault();
     try {
       if (editingSubQuery) {
-        await apiClient.updateSubQuery(editingSubQuery.id, formData as any);
+        await apiClient.updateSubQuery(editingSubQuery.id, formData);
       } else {
-        await apiClient.createSubQuery(formData as any);
+        await apiClient.createSubQuery(formData);
       }
       setShowForm(false);
       setEditingSubQuery(null);
       setFormData({ query_id: "", sub_query: "", added_by: "", description: "" });
       fetchSubQueries();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving sub query:", error);
-      setError(error?.message || "Error saving sub query");
+      setError(error instanceof Error ? error.message : "Error saving sub query");
     }
   };
 
@@ -95,9 +95,9 @@ export default function SubQueriesPage() {
     try {
       await apiClient.deleteSubQuery(id);
       fetchSubQueries();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error deleting sub query:", error);
-      setError("Error deleting sub query");
+      setError(error instanceof Error ? error.message : "Error deleting sub query");
     }
   };
 

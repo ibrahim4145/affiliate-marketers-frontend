@@ -34,6 +34,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
   const [preloadingPages, setPreloadingPages] = useState<Set<number>>(new Set());
 
   // Load initial data - prioritize table data first
+  // Initial load on mount; subsequent loads are driven by handlers
   useEffect(() => {
     if (!initialLeads && typeof window !== 'undefined') {
       // Load table data immediately
@@ -43,7 +44,8 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
       // Load niches for filter
       loadNiches();
     }
-  }, [initialLeads, searchTerm, filter, nicheFilter]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLeads]);
 
   // Generate cache key for preloaded data
   const getCacheKey = (page: number, search: string, filterValue: string, nicheValue: string = "all") => {
