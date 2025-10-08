@@ -34,6 +34,24 @@ export interface Query {
   updated_at: string;
 }
 
+export interface SubQueryBase {
+  id: string;
+  query_id: string;
+  sub_query: string;
+  added_by: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubQueryWithParent extends SubQueryBase {
+  parent_query?: {
+    id: string;
+    query: string;
+    description?: string;
+  };
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -205,6 +223,35 @@ class ApiClient {
 
   async deleteQuery(id: string): Promise<{ message: string }> {
     return this.request<{ message: string }>(`/queries/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Sub-Queries endpoints
+  async getSubQueries(): Promise<SubQueryBase[]> {
+    return this.request<SubQueryBase[]>('/sub-queries/');
+  }
+
+  async getSubQueriesWithQueryInfo(): Promise<SubQueryWithParent[]> {
+    return this.request<SubQueryWithParent[]>('/sub-queries/with-query-info');
+  }
+
+  async createSubQuery(subQuery: Omit<SubQueryBase, 'id' | 'created_at' | 'updated_at'>): Promise<SubQueryBase> {
+    return this.request<SubQueryBase>('/sub-queries/', {
+      method: 'POST',
+      body: JSON.stringify(subQuery),
+    });
+  }
+
+  async updateSubQuery(id: string, subQuery: Partial<Omit<SubQueryBase, 'id' | 'created_at' | 'updated_at'>>): Promise<SubQueryBase> {
+    return this.request<SubQueryBase>(`/sub-queries/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(subQuery),
+    });
+  }
+
+  async deleteSubQuery(id: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/sub-queries/${id}`, {
       method: 'DELETE',
     });
   }

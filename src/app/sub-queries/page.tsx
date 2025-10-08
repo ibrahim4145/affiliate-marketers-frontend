@@ -8,36 +8,18 @@ import Button from "@/components/ui/Button";
 import Icon from "@/components/ui/Icon";
 import TableHeader from "@/components/tables/TableHeader";
 import MobileCard from "@/components/tables/MobileCard";
+import { apiClient, Query, SubQueryBase, SubQueryWithParent } from "@/lib/api";
 
-interface Query {
-  id: string;
-  query: string;
-  description?: string;
-}
-
-interface SubQuery {
-  id: string;
-  query_id: string;
-  sub_query: string;
-  added_by: string;
-  description?: string;
-  created_at: string;
-  updated_at: string;
-  parent_query?: {
-    id: string;
-    query: string;
-    description?: string;
-  };
-}
+// Types now come from api client
 
 export default function SubQueriesPage() {
-  const [subQueries, setSubQueries] = useState<SubQuery[]>([]);
+  const [subQueries, setSubQueries] = useState<SubQueryWithParent[]>([]);
   const [queries, setQueries] = useState<Query[]>([]);
   const [, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [editingSubQuery, setEditingSubQuery] = useState<SubQuery | null>(null);
+  const [editingSubQuery, setEditingSubQuery] = useState<SubQueryWithParent | null>(null);
   const [formData, setFormData] = useState({
     query_id: "",
     sub_query: "",
@@ -57,11 +39,8 @@ export default function SubQueriesPage() {
   // Fetch queries for dropdown
   const fetchQueries = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/queries/");
-      if (response.ok) {
-        const data = await response.json();
-        setQueries(data);
-      }
+      const data = await apiClient.getQueries();
+      setQueries(data);
     } catch (error) {
       console.error("Error fetching queries:", error);
     }
@@ -71,11 +50,8 @@ export default function SubQueriesPage() {
   const fetchSubQueries = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:8000/api/sub-queries/with-query-info");
-      if (response.ok) {
-        const data = await response.json();
-        setSubQueries(data);
-      }
+      const data = await apiClient.getSubQueriesWithQueryInfo();
+      setSubQueries(data);
     } catch (error) {
       setError("Failed to fetch sub queries");
       console.error("Error fetching sub queries:", error);
@@ -87,36 +63,22 @@ export default function SubQueriesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingSubQuery 
-        ? `http://localhost:8000/api/sub-queries/${editingSubQuery.id}`
-        : "http://localhost:8000/api/sub-queries/";
-      
-      const method = editingSubQuery ? "PUT" : "POST";
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        setShowForm(false);
-        setEditingSubQuery(null);
-        setFormData({ query_id: "", sub_query: "", added_by: "", description: "" });
-        fetchSubQueries();
+      if (editingSubQuery) {
+        await apiClient.updateSubQuery(editingSubQuery.id, formData as any);
       } else {
-        const error = await response.json();
-        setError(`Error: ${error.detail}`);
+        await apiClient.createSubQuery(formData as any);
       }
-    } catch (error) {
+      setShowForm(false);
+      setEditingSubQuery(null);
+      setFormData({ query_id: "", sub_query: "", added_by: "", description: "" });
+      fetchSubQueries();
+    } catch (error: any) {
       console.error("Error saving sub query:", error);
-      setError("Error saving sub query");
+      setError(error?.message || "Error saving sub query");
     }
   };
 
-  const handleEdit = (subQuery: SubQuery) => {
+  const handleEdit = (subQuery: SubQueryWithParent) => {
     setEditingSubQuery(subQuery);
     setFormData({
       query_id: subQuery.query_id,
@@ -131,15 +93,8 @@ export default function SubQueriesPage() {
     if (!confirm("Are you sure you want to delete this sub query?")) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/sub-queries/${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        fetchSubQueries();
-      } else {
-        setError("Error deleting sub query");
-      }
+      await apiClient.deleteSubQuery(id);
+      fetchSubQueries();
     } catch (error) {
       console.error("Error deleting sub query:", error);
       setError("Error deleting sub query");
