@@ -1,0 +1,23 @@
+version: '3.9'
+services:
+  frontend:
+    container_name: affiliate-frontend
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Build-time public API URL
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    environment:
+      # Runtime public API URL (used by Next.js at runtime in some cases)
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    # For faster local dev builds, uncomment volumes & dev command
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules
+    # command: npm run dev
