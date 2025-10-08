@@ -258,7 +258,7 @@ export async function deleteLead(leadId: string): Promise<void> {
 // Fetch all niches
 export async function fetchNiches(): Promise<Niche[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/niches/`, {
+    const response = await fetch(`${API_BASE_URL}/niches/`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
