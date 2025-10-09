@@ -7,14 +7,14 @@ import Button from "@/components/ui/Button";
 import Icon from "@/components/ui/Icon";
 import HighlightText from "@/components/ui/HighlightText";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { fetchVisibleLeads, fetchLeadsStats, fetchNiches, LeadWithContacts, LeadsStats, LeadsResponse, PaginationInfo, Niche } from "@/lib/leadsApi";
+import { fetchMiddlemanLeads, deleteLead, fetchLeadsStats, fetchNiches, LeadWithContacts, LeadsStats, LeadsResponse, PaginationInfo, Niche } from "@/lib/leadsApi";
 import { useHydration } from "@/hooks/useHydration";
 
-interface LeadsClientProps {
+interface MiddlemanClientProps {
   leads?: LeadWithContacts[];
 }
 
-export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
+export default function MiddlemanClient({ leads: initialLeads }: MiddlemanClientProps) {
   const [leads, setLeads] = useState<LeadWithContacts[]>(initialLeads || []);
   const [stats, setStats] = useState<LeadsStats | null>(null);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
@@ -29,6 +29,9 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
   const [filterLoading, setFilterLoading] = useState(false);
   const [niches, setNiches] = useState<Niche[]>([]);
   const [nicheFilter, setNicheFilter] = useState("all");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [leadToDelete, setLeadToDelete] = useState<LeadWithContacts | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const mounted = useHydration();
   
   // Preloading cache system
@@ -56,18 +59,21 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
 
   // Load leads data with smart preloading
   const loadLeadsData = async (page: number, search: string, filterValue: string, nicheValue: string = "all", isPreload: boolean = false) => {
-    const cacheKey = getCacheKey(page, search, filterValue, nicheValue);
+    // Ensure page is a valid number
+    const validPage = isNaN(page) || page < 1 ? 1 : page;
+    
+    const cacheKey = getCacheKey(validPage, search, filterValue, nicheValue);
     
     // Check if data is already cached (persistent cache)
     if (preloadedData.has(cacheKey) && !isPreload) {
       const cachedData = preloadedData.get(cacheKey)!;
       setLeads(cachedData.leads);
       setPagination(cachedData.pagination);
-      setCurrentPage(page);
+      setCurrentPage(validPage);
       
       // Keep data in cache for future navigation (persistent cache)
       // Only trigger background preloading for next pages
-      preloadNextPages(page, search, filterValue, nicheValue, cachedData.pagination);
+      preloadNextPages(validPage, search, filterValue, nicheValue, cachedData.pagination);
       return;
     }
 
@@ -77,27 +83,27 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
         setError(null);
       }
       
-      const response = await fetchVisibleLeads(page, 50, search, filterValue, nicheValue);
+      const response = await fetchMiddlemanLeads(validPage, 50, search, filterValue, nicheValue);
       
       if (isPreload) {
         // Store preloaded data in cache
         setPreloadedData(prev => new Map(prev).set(cacheKey, response));
         setPreloadingPages(prev => {
           const newSet = new Set(prev);
-          newSet.delete(page);
+          newSet.delete(validPage);
           return newSet;
         });
       } else {
         // Display current page data
         setLeads(response.leads);
         setPagination(response.pagination);
-        setCurrentPage(page);
+        setCurrentPage(validPage);
         
         // Store current page data in cache for future navigation
         setPreloadedData(prev => new Map(prev).set(cacheKey, response));
         
         // Trigger background preloading for next pages
-        preloadNextPages(page, search, filterValue, nicheValue, response.pagination);
+        preloadNextPages(validPage, search, filterValue, nicheValue, response.pagination);
       }
     } catch (err) {
       if (!isPreload) {
@@ -117,11 +123,14 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
 
   // Preload next 2-3 pages in background
   const preloadNextPages = (currentPage: number, search: string, filterValue: string, nicheValue: string, paginationInfo: PaginationInfo) => {
+    // Ensure currentPage is valid
+    const validCurrentPage = isNaN(currentPage) || currentPage < 1 ? 1 : currentPage;
+    
     const pagesToPreload = [];
     
     // Preload next 2 pages if they exist
     for (let i = 1; i <= 2; i++) {
-      const nextPage = currentPage + i;
+      const nextPage = validCurrentPage + i;
       if (nextPage <= paginationInfo.total_pages) {
         const cacheKey = getCacheKey(nextPage, search, filterValue, nicheValue);
         
@@ -143,7 +152,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
   const loadStatsData = async () => {
     try {
       setLoading(true);
-      const statsData = await fetchLeadsStats(true); // Only get stats for visible leads
+      const statsData = await fetchLeadsStats();
       setStats(statsData);
     } catch (err) {
       console.error('Failed to load stats:', err);
@@ -211,10 +220,43 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
 
   // Handle page change
   const handlePageChange = (page: number) => {
-    loadLeadsData(page, searchTerm, filter, nicheFilter);
+    const validPage = isNaN(page) || page < 1 ? 1 : page;
+    loadLeadsData(validPage, searchTerm, filter, nicheFilter);
   };
 
+  // Handle delete lead
+  const handleDeleteLead = async () => {
+    if (!leadToDelete) return;
+    
+    try {
+      setDeleting(true);
+      await deleteLead(leadToDelete.id);
+      
+      // Refresh the data
+      await loadLeadsData(currentPage, searchTerm, filter, nicheFilter);
+      await loadStatsData();
+      
+      setDeleteModalOpen(false);
+      setLeadToDelete(null);
+    } catch (err) {
+      console.error('Failed to delete lead:', err);
+      setError('Failed to delete lead');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
+  // Open delete modal
+  const openDeleteModal = (lead: LeadWithContacts) => {
+    setLeadToDelete(lead);
+    setDeleteModalOpen(true);
+  };
+
+  // Close delete modal
+  const closeDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setLeadToDelete(null);
+  };
 
   const getContactCounts = (lead: LeadWithContacts) => {
     return {
@@ -272,9 +314,9 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">
-                Leads
+                Middleman Leads
               </h1>
-              <p className="text-slate-600 mt-1 text-sm">Manage and track your potential customers</p>
+              <p className="text-slate-600 mt-1 text-sm">Manage all leads (visible and hidden)</p>
               <p className="text-slate-500 mt-1 text-xs">
                 {pagination ? (
                   <div className="flex items-center">
@@ -306,7 +348,7 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="Search by domain or niche..."
+                placeholder="Search by domain, title, or niche..."
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white shadow-sm hover:shadow-md transition-all duration-300 text-sm"
@@ -386,10 +428,10 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
             <div className="bg-white/80 backdrop-blur-xl rounded-lg shadow-lg border border-slate-200/50 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-xs" style={{ tableLayout: 'fixed' }}>
-                  <TableHeader headers={["Domain", "Niche", "Emails", "Phones", "Social"]} />
+                  <TableHeader headers={["Domain", "Title", "Niche", "Emails", "Phones", "Social", "Visible", "Action"]} />
                   {(loading || tableLoading || searchLoading || filterLoading) && (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center">
+                      <td colSpan={8} className="px-4 py-8 text-center">
                         <div className="flex flex-col items-center justify-center text-slate-600">
                           <div className="w-6 h-6 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin mb-3"></div>
                           <span className="text-sm font-medium">
@@ -414,6 +456,12 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                                 </div>
                               </div>
                             </div>
+                        </td>
+                        <td className="px-2 py-2" style={{ width: '280px' }}>
+                            <div className="font-medium text-slate-900 truncate text-xs">
+                              <HighlightText text={lead.title} searchTerm={searchTerm} />
+                            </div>
+                            <div className="text-xs text-slate-500 truncate">ID: {lead.id.slice(-6)}</div>
                         </td>
                           <td className="px-2 py-2" style={{ width: '120px' }}>
                             <div className="text-xs text-slate-900 truncate font-medium">
@@ -468,6 +516,26 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                               <div className="text-xs text-slate-400 italic">-</div>
                             )}
                         </td>
+                        <td className="px-2 py-2" style={{ width: '80px' }}>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            lead.visible 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {lead.visible ? 'Yes' : 'No'}
+                          </span>
+                        </td>
+                        <td className="px-2 py-2" style={{ width: '100px' }}>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => openDeleteModal(lead)}
+                            className="text-xs"
+                          >
+                            <Icon name="trash" size="xs" className="mr-1" />
+                            Delete
+                          </Button>
+                        </td>
                         {/*<td className="px-4 py-3">
                             <Badge variant={getStatusColor(lead) as "success" | "warning" | "info" | "error"} size="sm">
                               {getStatusText(lead)}
@@ -510,8 +578,27 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                             <div className="font-semibold text-slate-900 break-all text-sm">
                               <HighlightText text={lead.domain} searchTerm={searchTerm} />
                             </div>
+                            <div className="text-xs text-slate-500 truncate">
+                              <HighlightText text={lead.title} searchTerm={searchTerm} />
+                            </div>
                           </div>
                         </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          lead.visible 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {lead.visible ? 'Visible' : 'Hidden'}
+                        </span>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => openDeleteModal(lead)}
+                        >
+                          <Icon name="trash" size="xs" />
+                        </Button>
                       </div>
                     </div>
 
@@ -688,6 +775,49 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
           <div className="h-8"></div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && leadToDelete && (
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <Card className="p-6 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Icon name="alert-triangle" className="text-red-600" size="lg" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">Delete Lead</h3>
+              <p className="text-slate-600 mb-6">
+                Are you sure you want to delete the lead <strong>{leadToDelete.domain}</strong>? 
+                This action cannot be undone and will also delete all associated contacts.
+              </p>
+              <div className="flex space-x-3">
+                <Button
+                  variant="secondary"
+                  onClick={closeDeleteModal}
+                  disabled={deleting}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={handleDeleteLead}
+                  disabled={deleting}
+                  className="flex-1"
+                >
+                  {deleting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

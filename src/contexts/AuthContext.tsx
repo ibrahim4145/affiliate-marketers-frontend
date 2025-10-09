@@ -18,9 +18,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
+  // Handle hydration
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
     // Check for existing session on mount
     const checkAuth = async () => {
       try {
@@ -41,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     checkAuth();
-  }, []);
+  }, [mounted]);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     if (!email || !password) {
@@ -101,6 +109,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     register,
     logout
   }), [user, isLoading, login, register, logout]);
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <AuthContext.Provider value={{
+        user: null,
+        isAuthenticated: false,
+        isLoading: true,
+        login: async () => false,
+        register: async () => false,
+        logout: () => {}
+      }}>
+        {children}
+      </AuthContext.Provider>
+    );
+  }
 
   return (
     <AuthContext.Provider value={value}>

@@ -9,6 +9,7 @@ export interface Lead {
   scraper_progress_id: string;
   scraped: boolean;
   google_done: boolean;
+  visible: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -144,18 +145,23 @@ export async function fetchSocials(): Promise<Social[]> {
   }
 }
 
-// Fetch leads with pagination and search
+// Fetch leads with pagination and search - unified endpoint
 export async function fetchLeadsWithContacts(
   page: number = 1,
   limit: number = 50,
   search?: string,
   filter?: string,
-  industryFilter?: string
+  industryFilter?: string,
+  visibleOnly?: boolean
 ): Promise<LeadsResponse> {
   try {
+    // Ensure page is a valid number
+    const validPage = isNaN(page) || page < 1 ? 1 : page;
+    const validLimit = isNaN(limit) || limit < 1 ? 50 : limit;
+    
     const params = new URLSearchParams({
-      skip: ((page - 1) * limit).toString(),
-      limit: limit.toString()
+      skip: ((validPage - 1) * validLimit).toString(),
+      limit: validLimit.toString()
     });
     
     if (search) params.append('search', search);
@@ -165,6 +171,9 @@ export async function fetchLeadsWithContacts(
     }
     if (industryFilter && industryFilter !== 'all') {
       params.append('industry_id', industryFilter);
+    }
+    if (visibleOnly !== undefined) {
+      params.append('visible_only', visibleOnly.toString());
     }
     
     // Add cache-busting parameter
@@ -180,10 +189,54 @@ export async function fetchLeadsWithContacts(
   }
 }
 
-// Fetch leads statistics
-export async function fetchLeadsStats(): Promise<LeadsStats> {
+// Fetch leads for middleman page (all leads regardless of visibility)
+export async function fetchMiddlemanLeads(
+  page: number = 1,
+  limit: number = 50,
+  search?: string,
+  filter?: string,
+  industryFilter?: string
+): Promise<LeadsResponse> {
+  // Use the unified endpoint without visibleOnly filter to get all leads
+  return fetchLeadsWithContacts(page, limit, search, filter, industryFilter);
+}
+
+// Fetch visible leads for main leads page
+export async function fetchVisibleLeads(
+  page: number = 1,
+  limit: number = 50,
+  search?: string,
+  filter?: string,
+  industryFilter?: string
+): Promise<LeadsResponse> {
+  // Use the unified endpoint with visibleOnly=true to get only visible leads
+  return fetchLeadsWithContacts(page, limit, search, filter, industryFilter, true);
+}
+
+// Delete a lead
+export async function deleteLead(leadId: string): Promise<void> {
   try {
-    const response = await fetch(`${API_BASE_URL}/leads/stats/summary`);
+    const response = await fetch(`${API_BASE_URL}/leads/${leadId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Error deleting lead:', error);
+    throw error;
+  }
+}
+
+// Fetch leads statistics
+export async function fetchLeadsStats(visibleOnly?: boolean): Promise<LeadsStats> {
+  try {
+    const url = new URL(`${API_BASE_URL}/leads/stats/summary`);
+    if (visibleOnly !== undefined) {
+      url.searchParams.append('visible_only', visibleOnly.toString());
+    }
+    
+    const response = await fetch(url.toString());
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -235,22 +288,6 @@ export async function updateLead(leadId: string, leadData: Partial<Lead>): Promi
     return await response.json();
   } catch (error) {
     console.error('Error updating lead:', error);
-    throw error;
-  }
-}
-
-// Delete a lead
-export async function deleteLead(leadId: string): Promise<void> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/leads/${leadId}`, {
-      method: 'DELETE'
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-  } catch (error) {
-    console.error('Error deleting lead:', error);
     throw error;
   }
 }

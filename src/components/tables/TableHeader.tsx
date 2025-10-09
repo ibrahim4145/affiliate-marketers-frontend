@@ -6,7 +6,7 @@ interface TableHeaderProps {
 }
 
 export default function TableHeader({ headers, className }: TableHeaderProps) {
-  const columnWidths = ['220px', '280px', '120px', '240px', '100px', '130px'];
+  const columnWidths = ['220px', '120px', '240px', '100px', '130px', '80px', '100px'];
   
   return (
     <thead className={cn("bg-gray-50", className)}>
@@ -15,7 +15,7 @@ export default function TableHeader({ headers, className }: TableHeaderProps) {
           <th 
             key={i} 
             className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            style={{ width: columnWidths[i] }}
+            style={{ width: columnWidths[i] || 'auto' }}
           >
             {header}
           </th>
