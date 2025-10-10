@@ -64,9 +64,9 @@ export default function Dashboard() {
       color: "bg-blue-500"
     },
     {
-      title: "Visible Leads",
+      title: "Total Leads",
       value: leadsStats?.total_leads?.toString() || "0",
-      change: "Active leads count",
+      change: "Total leads count",
       icon: "users",
       color: "bg-purple-500"
     },
