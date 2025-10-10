@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiClient, Niche, Category, Query } from "@/lib/api";
+import { fetchLeadsStats, fetchEmailStats, LeadsStats, EmailStats } from "@/lib/leadsApi";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Icon from "@/components/ui/Icon";
@@ -12,6 +13,8 @@ export default function Dashboard() {
   const [niches, setNiches] = useState<Niche[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [queries, setQueries] = useState<Query[]>([]);
+  const [leadsStats, setLeadsStats] = useState<LeadsStats | null>(null);
+  const [emailStats, setEmailStats] = useState<EmailStats | null>(null);
   const [, setLoading] = useState(true);
   const [error, setError] = useState("");
   const { isAuthenticated, isLoading } = useAuth();
@@ -25,14 +28,18 @@ export default function Dashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [nichesData, categoriesData, queriesData] = await Promise.all([
+      const [nichesData, categoriesData, queriesData, leadsStatsData, emailStatsData] = await Promise.all([
         apiClient.getNiches(),
         apiClient.getCategories(),
-        apiClient.getQueries()
+        apiClient.getQueries(),
+        fetchLeadsStats(true), // Get stats for visible leads only
+        fetchEmailStats(true) // Get email stats for visible leads only
       ]);
       setNiches(nichesData);
       setCategories(categoriesData);
       setQueries(queriesData);
+      setLeadsStats(leadsStatsData);
+      setEmailStats(emailStatsData);
     } catch (error) {
       setError("Failed to fetch data");
       console.error(error);
@@ -57,34 +64,29 @@ export default function Dashboard() {
       color: "bg-blue-500"
     },
     {
-      title: "Active Queries",
-      value: queries.length.toString(),
-      change: "Search queries configured",
-      icon: "search",
-      color: "bg-green-500"
-    },
-    {
-      title: "Leads Generated",
-      value: "1,234",
-      change: "+156 this week",
+      title: "Visible Leads",
+      value: leadsStats?.total_leads?.toString() || "0",
+      change: "Active leads count",
       icon: "users",
       color: "bg-purple-500"
     },
     {
       title: "Success Rate",
-      value: "94.2%",
-      change: "+2.1% this week",
+      value: emailStats && leadsStats ? 
+        `${((emailStats.leads_with_emails / leadsStats.total_leads) * 100).toFixed(1)}%` : 
+        "0%",
+      change: "Leads with emails",
       icon: "lightning",
       color: "bg-orange-500"
     }
   ];
 
-  const recentActivity = [
-    { action: "New industry added", target: "Healthcare", time: "2 hours ago", type: "success" },
-    { action: "Query completed", target: "AI startups", time: "4 hours ago", type: "info" },
-    { action: "Lead generated", target: "TechCorp Inc", time: "6 hours ago", type: "success" },
-    { action: "Industry updated", target: "Finance", time: "1 day ago", type: "info" }
-  ];
+  // const recentActivity = [
+  //   { action: "New industry added", target: "Healthcare", time: "2 hours ago", type: "success" },
+  //   { action: "Query completed", target: "AI startups", time: "4 hours ago", type: "info" },
+  //   { action: "Lead generated", target: "TechCorp Inc", time: "6 hours ago", type: "success" },
+  //   { action: "Industry updated", target: "Finance", time: "1 day ago", type: "info" }
+  // ];
 
   if (isLoading) {
     return (
@@ -141,81 +143,6 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="flex-1 px-4 pb-4 min-h-0">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Recent Activity */}
-            <div className="lg:col-span-2 bg-white/80 backdrop-blur-xl rounded-lg shadow-lg border border-slate-200/50 p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-semibold text-slate-900">Recent Activity</h3>
-                <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 text-xs">View All</Button>
-              </div>
-              <div className="space-y-3">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
-                    <div className={`w-2 h-2 rounded-full ${
-                      activity.type === 'success' ? 'bg-emerald-500' : 'bg-slate-500'
-                    }`}></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-slate-900">{activity.action}</p>
-                      <p className="text-xs text-slate-500">{activity.target}</p>
-                    </div>
-                    <div className="text-xs text-slate-400">{activity.time}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-lg shadow-lg border border-slate-200/50 p-4">
-              <h3 className="text-base font-semibold text-slate-900 mb-4">Quick Actions</h3>
-              <div className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full justify-start bg-white/50 hover:bg-slate-50 border-slate-300 text-slate-700 text-xs">
-                  <Icon name="industries" className="mr-2" size="sm" />
-                  Manage Categories
-                </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start bg-white/50 hover:bg-slate-50 border-slate-300 text-slate-700 text-xs">
-                  <Icon name="industries" className="mr-2" size="sm" />
-                  Manage Niches
-                </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start bg-white/50 hover:bg-slate-50 border-slate-300 text-slate-700 text-xs">
-                  <Icon name="search" className="mr-2" size="sm" />
-                  Run New Query
-                </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start bg-white/50 hover:bg-slate-50 border-slate-300 text-slate-700 text-xs">
-                  <Icon name="users" className="mr-2" size="sm" />
-                  View Leads
-                </Button>
-              </div>
-            </div>
-          </div>
-
-        {/* Performance Overview */}
-        <div className="mt-4 bg-white/80 backdrop-blur-xl rounded-lg shadow-lg border border-slate-200/50 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-slate-900">Performance Overview</h3>
-            <div className="flex space-x-2">
-              <Badge variant="success" size="sm">Active</Badge>
-              <Badge variant="info" size="sm">Optimized</Badge>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-xl font-bold text-slate-700">98.5%</div>
-              <div className="text-xs text-slate-600">Uptime</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl font-bold text-slate-700">2.3s</div>
-              <div className="text-xs text-slate-600">Avg Response</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl font-bold text-slate-700">1,247</div>
-              <div className="text-xs text-slate-600">Total Requests</div>
-            </div>
-          </div>
-        </div>
         </div>
       </div>
     </DashboardLayout>

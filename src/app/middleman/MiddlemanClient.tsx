@@ -470,47 +470,38 @@ export default function MiddlemanClient({ leads: initialLeads }: MiddlemanClient
                         </td>
                           <td className="px-2 py-2" style={{ width: '240px' }}>
                             {lead.emails.length > 0 ? (
-                              <div className="space-y-1">
-                                {lead.emails.slice(0, 1).map((email, index) => (
-                                  <div key={index} className="text-xs text-slate-900 truncate font-medium">
+                              <div className="space-y-1 max-h-20 overflow-y-auto">
+                                {lead.emails.map((email, index) => (
+                                  <div key={index} className="text-xs text-slate-900 font-medium break-all">
                                     {email.email}
                                   </div>
                                 ))}
-                                {lead.emails.length > 1 && (
-                                  <div className="text-xs text-slate-500">+{lead.emails.length - 1}</div>
-                                )}
                               </div>
                             ) : (
                               <div className="text-xs text-slate-400 italic">-</div>
                             )}
                         </td>
-                          <td className="px-2 py-2" style={{ width: '100px' }}>
+                          <td className="px-2 py-2" style={{ width: '150px' }}>
                             {lead.phones.length > 0 ? (
-                              <div className="space-y-1">
-                                {lead.phones.slice(0, 1).map((phone, index) => (
-                                  <div key={index} className="text-xs text-slate-900 truncate font-medium">
+                              <div className="space-y-1 max-h-20 overflow-y-auto">
+                                {lead.phones.map((phone, index) => (
+                                  <div key={index} className="text-xs text-slate-900 font-medium break-all">
                                     {phone.phone}
                                   </div>
                                 ))}
-                                {lead.phones.length > 1 && (
-                                  <div className="text-xs text-slate-500">+{lead.phones.length - 1}</div>
-                                )}
                               </div>
                             ) : (
                               <div className="text-xs text-slate-400 italic">-</div>
                             )}
                         </td>
-                          <td className="px-2 py-2" style={{ width: '130px' }}>
+                          <td className="px-2 py-2" style={{ width: '240px' }}>
                             {lead.socials.length > 0 ? (
-                              <div className="space-y-1">
-                                {lead.socials.slice(0, 1).map((social, index) => (
-                                  <div key={index} className="text-xs text-slate-900 truncate font-medium">
+                              <div className="space-y-1 max-h-20 overflow-y-auto">
+                                {lead.socials.map((social, index) => (
+                                  <div key={index} className="text-xs text-slate-900 font-medium break-all">
                                     <span className="text-slate-500">{social.platform}:</span> {social.handle}
                                   </div>
                                 ))}
-                                {lead.socials.length > 1 && (
-                                  <div className="text-xs text-slate-500">+{lead.socials.length - 1}</div>
-                                )}
                               </div>
                             ) : (
                               <div className="text-xs text-slate-400 italic">-</div>
@@ -624,14 +615,11 @@ export default function MiddlemanClient({ leads: initialLeads }: MiddlemanClient
                         </div>
                         {lead.emails.length > 0 ? (
                           <div className="space-y-1">
-                            {lead.emails.slice(0, 2).map((email, index) => (
-                              <div key={index} className="text-xs text-slate-900 bg-slate-50 px-2 py-1 rounded">
+                            {lead.emails.map((email, index) => (
+                              <div key={index} className="text-xs text-slate-900 bg-slate-50 px-2 py-1 rounded break-all">
                                 {email.email}
                               </div>
                             ))}
-                            {lead.emails.length > 2 && (
-                              <div className="text-xs text-slate-500">+{lead.emails.length - 2} more</div>
-                            )}
                           </div>
                         ) : (
                           <div className="text-xs text-slate-400 italic">No emails</div>
@@ -645,14 +633,11 @@ export default function MiddlemanClient({ leads: initialLeads }: MiddlemanClient
                         </div>
                         {lead.phones.length > 0 ? (
                           <div className="space-y-1">
-                            {lead.phones.slice(0, 2).map((phone, index) => (
-                              <div key={index} className="text-xs text-slate-900 bg-slate-50 px-2 py-1 rounded">
+                            {lead.phones.map((phone, index) => (
+                              <div key={index} className="text-xs text-slate-900 bg-slate-50 px-2 py-1 rounded break-all">
                                 {phone.phone}
                               </div>
                             ))}
-                            {lead.phones.length > 2 && (
-                              <div className="text-xs text-slate-500">+{lead.phones.length - 2} more</div>
-                            )}
                           </div>
                         ) : (
                           <div className="text-xs text-slate-400 italic">No phones</div>
@@ -666,14 +651,11 @@ export default function MiddlemanClient({ leads: initialLeads }: MiddlemanClient
                         </div>
                         {lead.socials.length > 0 ? (
                           <div className="space-y-1">
-                            {lead.socials.slice(0, 2).map((social, index) => (
-                              <div key={index} className="text-xs text-slate-900 bg-slate-50 px-2 py-1 rounded">
+                            {lead.socials.map((social, index) => (
+                              <div key={index} className="text-xs text-slate-900 bg-slate-50 px-2 py-1 rounded break-all">
                                 <span className="text-slate-500">{social.platform}:</span> {social.handle}
                               </div>
                             ))}
-                            {lead.socials.length > 2 && (
-                              <div className="text-xs text-slate-500">+{lead.socials.length - 2} more</div>
-                            )}
                           </div>
                         ) : (
                           <div className="text-xs text-slate-400 italic">No social</div>

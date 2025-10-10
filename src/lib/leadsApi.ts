@@ -74,6 +74,12 @@ export interface LeadsStats {
   progress_stats: Array<{ _id: string; count: number }>;
 }
 
+export interface EmailStats {
+  total_emails: number;
+  leads_with_emails: number;
+  total_leads: number;
+}
+
 export interface PaginationInfo {
   page: number;
   limit: number;
@@ -243,6 +249,25 @@ export async function fetchLeadsStats(visibleOnly?: boolean): Promise<LeadsStats
     return await response.json();
   } catch (error) {
     console.error('Error fetching leads stats:', error);
+    throw error;
+  }
+}
+
+// Fetch email statistics
+export async function fetchEmailStats(visibleOnly?: boolean): Promise<EmailStats> {
+  try {
+    const url = new URL(`${API_BASE_URL}/leads/stats/emails`);
+    if (visibleOnly !== undefined) {
+      url.searchParams.append('visible_only', visibleOnly.toString());
+    }
+    
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching email stats:', error);
     throw error;
   }
 }

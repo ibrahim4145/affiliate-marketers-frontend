@@ -6,7 +6,12 @@ interface TableHeaderProps {
 }
 
 export default function TableHeader({ headers, className }: TableHeaderProps) {
-  const columnWidths = ['220px', '120px', '240px', '100px', '130px', '80px', '100px'];
+  // Define column widths for different layouts
+  const middlemanWidths = ['220px', '280px', '120px', '240px', '150px', '240px', '80px', '100px']; // 8 columns
+  const leadsWidths = ['220px', '120px', '240px', '150px', '240px']; // 5 columns
+  
+  // Choose the appropriate width array based on number of headers
+  const columnWidths = headers.length === 8 ? middlemanWidths : leadsWidths;
   
   return (
     <thead className={cn("bg-gray-50", className)}>
